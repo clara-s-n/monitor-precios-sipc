@@ -51,6 +51,7 @@ Estas métricas se calculan sobre la **capa Refined** del Data Lake y se utiliza
 ## 🏗️ Arquitectura
 
 ### Data Lake (filesystem local)
+
 ```
 data_sipc/
 ├── landing/          # CSV originales del SIPC (no versionados)
@@ -60,6 +61,7 @@ data_sipc/
 ```
 
 ### Stack Tecnológico
+
 - **PySpark** (modo `local[*]`) – Transformaciones ETL sin cluster distribuido
 - **Apache Airflow 2.9.2** – Orquestación (SequentialExecutor + SQLite)
 - **Docker Compose** – Contenedores `airflow` y `jupyter`
@@ -68,6 +70,7 @@ data_sipc/
 ## 🚀 Inicio Rápido
 
 ### Prerequisitos
+
 - Docker y Docker Compose instalados
 - 4GB RAM disponible
 
@@ -87,10 +90,10 @@ docker-compose ps
 
 ### Acceso a interfaces
 
-| Servicio       | URL                       | Credenciales     |
-|----------------|---------------------------|------------------|
-| Airflow UI     | http://localhost:8080     | Sin autenticación |
-| Jupyter Lab    | http://localhost:8888     | Token en logs     |
+| Servicio    | URL                   | Credenciales      |
+| ----------- | --------------------- | ----------------- |
+| Airflow UI  | http://localhost:8080 | Sin autenticación |
+| Jupyter Lab | http://localhost:8888 | Token en logs     |
 
 ```bash
 # Obtener token de Jupyter
@@ -100,6 +103,7 @@ docker logs jupyter-spark | grep "token="
 ### Ejecutar pipeline ETL
 
 1. Colocar archivos CSV del SIPC en `data_sipc/landing/`:
+
    - `precios.csv`
    - `productos.csv`
    - `establecimientos.csv`
@@ -148,16 +152,16 @@ monitor-precios-sipc/
 ```
 📥 Landing Zone (CSV)
     ↓ ingest_landing.py (validación + copia)
-    
+
 🧹 Raw Zone (Parquet limpio)
     ↓ build_raw.py (limpieza + tipado)
-    
+
 📐 Refined Zone (Star Schema)
     ↓ build_dimensions.py
     │   → dim_tiempo, dim_producto, dim_establecimiento, dim_ubicacion
     ↓ build_facts.py
     │   → fact_precios
-    
+
 📈 Exports Dashboard
     ↓ metrics/* (KPIs)
     │   → precio_promedio, dispersion_index, canasta_basica, ranking
@@ -166,15 +170,16 @@ monitor-precios-sipc/
 ### Modelo de Datos (Star Schema)
 
 **Dimensiones:**
+
 - `dim_tiempo`: fecha, año, mes, día, trimestre
 - `dim_producto`: producto_id, nombre, categoría, subcategoría, marca
 - `dim_establecimiento`: establecimiento_id, nombre, cadena
 - `dim_ubicacion`: ubicacion_id, departamento, ciudad, dirección
 
 **Hechos:**
+
 - `fact_precios`: precio, fecha_id, producto_id, establecimiento_id, ubicacion_id, unidad
 
 ## 🔧 Desarrollo
 
 ### Editar transformaciones ETL
-
