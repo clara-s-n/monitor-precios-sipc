@@ -1,0 +1,67 @@
+########################
+# Entornos / dependencias
+########################
+
+# Entorno virtual de Python
+.venv/
+venv/
+
+# Pip/poetry/etc (por si acaso)
+pip-wheel-metadata/
+*.egg-info/
+dist/
+build/
+
+########################
+# Python
+########################
+
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+########################
+# Jupyter
+########################
+
+.ipynb_checkpoints/
+
+########################
+# IDEs / SO
+########################
+
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+########################
+# Configuración / secretos
+########################
+
+.env
+.env.*
+*.log
+
+########################
+# Airflow
+########################
+
+airflow/logs/*
+airflow/airflow.db
+airflow/*.pid
+
+########################
+# Datos del Data Lake (NO versionar)
+########################
+
+# Ignorar absolutamente todos los datos reales
+data_sipc/landing/**
+data_sipc/raw/**
+data_sipc/refined/**
+data_sipc/exports_dashboard/**
+
+# Pero permitir versionar los .gitkeep para que existan las carpetas
+!data_sipc/**/.gitkeep
