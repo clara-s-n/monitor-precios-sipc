@@ -1,0 +1,16 @@
+nombreDeAtributo;descripcion;tipoDeDato
+id.establecimientos;Numero que identifica establecimiento al que corresponde el dato en la tabla Precios_año (Establecimiento);Integer
+razon.social;Nombre legal del establecimiento que lo identifica como persona jurídica;Character
+nombre.sucursal;Nombre con el que se identifica la sucursal o local especifico;Character
+direccion;Direccion física completa del establecimiento;Character
+ccz;Centro comunal zonal donde se ubica el local;Character
+barrio;Barrio donde se encuentra el establecimiento;Character
+cajas;Numero de cajas registradoras disponibles en el local;Numeric
+cadena;Nombre de la cadena a la que pertenece o sin cadena ;Character
+long;Longitud geografica del establecimiento (coordenada geoespacial);Geography
+lat;Latitud geografica del establecimiento (coordenada geoespacial);Geography
+ciudad;Ciudad en la que se encuentra ubicado el establecimiento;Character
+depto;Nombre del departamento;Character
+id.depto;Codigo que identifica el departamento;Integer
+localidad;Codigo que identifica la localidad o ciudad dentro del departamento;Integer
+superficie (m2);Area fisica ocupada por el local comercial en metros cuadrados;Numeric

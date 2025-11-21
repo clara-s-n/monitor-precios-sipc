@@ -1,0 +1,44 @@
+version: "3.8"
+
+services:
+  airflow:
+    build: ./airflow
+    container_name: airflow
+    restart: unless-stopped
+    environment:
+      # Config básica de Airflow
+      AIRFLOW_HOME: /opt/airflow
+      AIRFLOW__CORE__EXECUTOR: SequentialExecutor
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/dags
+      # DB sqlite simple para desarrollo
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: sqlite:////opt/airflow/airflow.db
+      # Deshabilitar login para simplificar (solo dev)
+      AIRFLOW__WEBSERVER__AUTHENTICATE: "False"
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+      - ./airflow/plugins:/opt/airflow/plugins
+      - ./data_sipc:/opt/airflow/data_sipc
+      - ./src:/opt/airflow/src
+    ports:
+      - "8080:8080"
+    command: >
+      bash -c "
+        airflow db init &&
+        airflow webserver & 
+        airflow scheduler
+      "
+
+  jupyter:
+    image: jupyter/pyspark-notebook:latest
+    container_name: jupyter-spark
+    restart: unless-stopped
+    environment:
+      JUPYTER_ENABLE_LAB: "yes"
+    volumes:
+      - ./notebooks:/home/jovyan/work
+      - ./data_sipc:/home/jovyan/work/data_sipc
+      - ./src:/home/jovyan/work/src
+    ports:
+      - "8888:8888"

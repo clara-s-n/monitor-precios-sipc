@@ -1,0 +1,12 @@
+nombreDeAtributo;descripcion;tipoDeDato
+ID PrecioDiario;Numero que identifica la declaracion unica de ese precio/establecimiento;String
+Declaracion;Año/Mes/Dia, Hora de envio del dato;Date
+Fecha;Año/Mes/Dia de envio del dato;Date
+Fechaanterior;Año/Mes/Dia ultimo envio de dato(NA cuando hay continuidad en envio diario de datos);Date
+Oferta;Binaria: es 1 si el precio corresponde a una oferta del dia y 0 cuando es el precio sin oferta;String
+Precio;Valor en pesos uruguayos incluyendo impuestos al que se comercializa en el establecimiento el producto para esa fecha;Numeric
+PrecioAnterior;Valor en pesos uruguayos incluyendo impuestos al que se comercializa en el establecimiento el producto en el ultimo envio de datos(NA cuando hay continuidad en el envio de datos);Numeric
+Publico;A quien estan dirigidos esos precios(NA cuando son comercios minoristas o venta al publico en general);String
+Establecimiento(id.establecimiento);Numero que identifica establecimiento al que corresponde el dato;Integer
+Feria_id;Numero que identifica feria a que corresponde el dato;Integer
+Presentacion_Producto(id.producto);Numero que identifica producto al que corresponde el dato;Integer

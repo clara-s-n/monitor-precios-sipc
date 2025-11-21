@@ -1,0 +1,6 @@
+nombreDeAtributo;descripcion;tipoDeDato
+id.producto;Numero que identifica producto al que corresponde el dato en la tabla Precios_año (Presentacion_Producto );Integer
+producto;Nombre general del producto;Character
+marca;Identificador comercial de los bienes y servicios que ofrece una empresa. En caso de no tener se indica Sin marca;Character
+especificacion;Detalle descriptivo del producto incluye tamaño, cantidades, unidad de medida, paquete, envases;Character
+nombre;Es la union de los atributos producto, marca y especificacion;Character
