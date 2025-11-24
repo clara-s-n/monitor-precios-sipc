@@ -182,4 +182,113 @@ monitor-precios-sipc/
 
 ## 🔧 Desarrollo
 
+### Estructura del código ETL
+
+El pipeline ETL está organizado en módulos reutilizables en `src/`:
+
+**Ingesta (`src/ingestion/`):**
+- `ingest_landing.py`: Valida y copia archivos CSV a la landing zone
+  - Verifica estructura de columnas esperadas
+  - Maneja encoding ISO-8859-1 y delimitador `;`
+  - Genera metadata de ingesta
+
+**Transformaciones (`src/transform/`):**
+- `build_raw.py`: Procesa CSVs a Parquet con limpieza y tipado
+  - Convierte fechas, normaliza columnas
+  - Filtra registros inválidos
+  - Particiona por fecha para optimizar consultas
+
+- `build_dimensions.py`: Construye las 4 dimensiones del modelo estrella
+  - `dim_tiempo`: Atributos temporales derivados de fechas
+  - `dim_producto`: Catálogo completo de productos
+  - `dim_establecimiento`: Información de comercios
+  - `dim_ubicacion`: Datos geográficos
+
+- `build_facts.py`: Crea tabla de hechos con claves foráneas
+  - Joins con todas las dimensiones
+  - Mantiene medidas (precio, unidad)
+  - Particionado por fecha
+
+**Métricas (`src/metrics/`):**
+- `simple_metrics.py`: Calcula las 6 métricas de negocio
+  1. Precio promedio por producto y período
+  2. Precios mínimos y máximos
+  3. Índice de dispersión de precios
+  4. Costo de canasta básica por supermercado
+  5. Ranking de supermercados por costo
+  6. Variación porcentual mensual
+
+**Utilidades (`src/utils/`):**
+- `spark_session.py`: Factory de sesiones Spark (modo local)
+- `paths.py`: Gestión centralizada de rutas del Data Lake
+
 ### Editar transformaciones ETL
+
+Los módulos en `src/` están montados como volumen en el contenedor de Airflow, por lo que los cambios se reflejan inmediatamente sin necesidad de reconstruir la imagen.
+
+```bash
+# Editar archivo
+vim src/transform/build_dimensions.py
+
+# Probar localmente con PySpark
+cd /ruta/proyecto
+python -c "from src.transform.build_dimensions import build_dimensions; build_dimensions()"
+
+# O ejecutar desde Airflow UI
+# (activa manualmente el DAG monitor_precios_sipc_etl)
+```
+
+### Ejecutar pipeline completo
+
+```bash
+# Asegurar que los CSV están en landing/
+ls -la data_sipc/landing/*.csv
+
+# Desde Airflow UI:
+# 1. Ir a http://localhost:8080
+# 2. Buscar DAG 'monitor_precios_sipc_etl'
+# 3. Activar toggle a ON
+# 4. Trigger DAG manualmente con botón ▶️
+
+# Verificar outputs
+ls -la data_sipc/raw/
+ls -la data_sipc/refined/
+ls -la data_sipc/exports_dashboard/
+```
+
+### Estructura de datos generada
+
+**Raw zone** (`data_sipc/raw/`):
+- `precios/`: Precios limpios particionados por fecha
+- `productos/`: Catálogo de productos
+- `establecimientos/`: Información de comercios
+
+**Refined zone** (`data_sipc/refined/`):
+- `dim_tiempo/`: Dimensión temporal
+- `dim_producto/`: Dimensión de productos
+- `dim_establecimiento/`: Dimensión de establecimientos
+- `dim_ubicacion/`: Dimensión geográfica
+- `fact_precios/`: Tabla de hechos (particionada por fecha)
+
+**Exports** (`data_sipc/exports_dashboard/`):
+- `precio_promedio.parquet`
+- `min_max_precios.parquet`
+- `dispersion_precios.parquet`
+- `canasta_basica.parquet`
+- `ranking_supermercados.parquet`
+- `variacion_mensual.parquet`
+
+### Leer resultados en notebooks
+
+```python
+from pyspark.sql import SparkSession
+
+spark = SparkSession.builder.appName("Dashboard").getOrCreate()
+
+# Leer métricas
+precio_prom = spark.read.parquet("../data_sipc/exports_dashboard/precio_promedio.parquet")
+precio_prom.show()
+
+# Análisis con Pandas
+df_pandas = precio_prom.toPandas()
+```

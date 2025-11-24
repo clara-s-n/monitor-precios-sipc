@@ -7,11 +7,12 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 
-# Las funciones de procesamiento se importarán desde src/
-# from src.ingestion.ingest_landing import ingest_landing_data
-# from src.transform.build_raw import transform_to_raw
-# from src.transform.build_dimensions import build_dimensions
-# from src.transform.build_facts import build_facts
+# Importar funciones de procesamiento desde src/
+from src.ingestion.ingest_landing import ingest_landing_data
+from src.transform.build_raw import transform_to_raw
+from src.transform.build_dimensions import build_dimensions
+from src.transform.build_facts import build_facts
+from src.metrics.simple_metrics import calculate_simple_metrics
 
 
 # Configuración por defecto del DAG
@@ -35,33 +36,37 @@ with DAG(
     tags=['sipc', 'etl', 'precios'],
 ) as dag:
     
-    # TODO: Descomentar cuando se implementen las funciones
-    
     # Tarea 1: Ingestar datos a landing zone
-    # ingest_task = PythonOperator(
-    #     task_id='ingest_landing_data',
-    #     python_callable=ingest_landing_data,
-    # )
+    # Nota: Sin source_dir, asume que los datos ya están en landing/
+    ingest_task = PythonOperator(
+        task_id='ingest_landing_data',
+        python_callable=ingest_landing_data,
+        op_kwargs={'source_dir': None},
+    )
     
     # Tarea 2: Limpiar y transformar a raw zone
-    # build_raw_task = PythonOperator(
-    #     task_id='build_raw_zone',
-    #     python_callable=transform_to_raw,
-    # )
+    build_raw_task = PythonOperator(
+        task_id='build_raw_zone',
+        python_callable=transform_to_raw,
+    )
     
     # Tarea 3: Construir dimensiones
-    # build_dims_task = PythonOperator(
-    #     task_id='build_dimensions',
-    #     python_callable=build_dimensions,
-    # )
+    build_dims_task = PythonOperator(
+        task_id='build_dimensions',
+        python_callable=build_dimensions,
+    )
     
     # Tarea 4: Construir tabla de hechos
-    # build_facts_task = PythonOperator(
-    #     task_id='build_facts',
-    #     python_callable=build_facts,
-    # )
+    build_facts_task = PythonOperator(
+        task_id='build_facts',
+        python_callable=build_facts,
+    )
+    
+    # Tarea 5: Calcular métricas
+    metrics_task = PythonOperator(
+        task_id='calculate_metrics',
+        python_callable=calculate_simple_metrics,
+    )
     
     # Definir dependencias
-    # ingest_task >> build_raw_task >> build_dims_task >> build_facts_task
-    
-    pass  # Placeholder hasta implementar tareas
+    ingest_task >> build_raw_task >> build_dims_task >> build_facts_task >> metrics_task
