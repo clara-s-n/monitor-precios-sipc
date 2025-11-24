@@ -63,6 +63,8 @@ class RawZoneBuilder:
             self.spark.read
             .option("header", "true")
             .option("inferSchema", "false")
+            .option("delimiter", ";")
+            .option("encoding", "ISO-8859-1")
             .csv(landing_file)
         )
         
@@ -73,6 +75,8 @@ class RawZoneBuilder:
             .withColumn("precio", F.col("precio").cast(DoubleType()))
             .filter(F.col("precio").isNotNull())
             .filter(F.col("precio") > 0)
+            .filter(F.col("producto_id").isNotNull())
+            .filter(F.col("establecimiento_id").isNotNull())
         )
         
         # Guardar como Parquet particionado por fecha
@@ -96,11 +100,21 @@ class RawZoneBuilder:
         df = (
             self.spark.read
             .option("header", "true")
+            .option("delimiter", ";")
+            .option("encoding", "ISO-8859-1")
             .csv(landing_file)
         )
         
+        # Normalizar nombres de columnas
+        df_normalized = (
+            df
+            .withColumnRenamed("id.producto", "producto_id")
+            .withColumn("categoria", F.col("producto"))  # Usar producto como categoría base
+            .withColumn("subcategoria", F.col("especificacion"))
+        )
+        
         # Deduplicar por producto_id
-        df_clean = df.dropDuplicates(["producto_id"])
+        df_clean = df_normalized.dropDuplicates(["producto_id"])
         
         (
             df_clean
@@ -121,11 +135,21 @@ class RawZoneBuilder:
         df = (
             self.spark.read
             .option("header", "true")
+            .option("delimiter", ";")
+            .option("encoding", "ISO-8859-1")
             .csv(landing_file)
         )
         
+        # Normalizar nombres de columnas
+        df_normalized = (
+            df
+            .withColumnRenamed("id.establecimientos", "establecimiento_id")
+            .withColumnRenamed("razon.social", "razon_social")
+            .withColumnRenamed("nombre.sucursal", "nombre")
+        )
+        
         # Deduplicar por establecimiento_id
-        df_clean = df.dropDuplicates(["establecimiento_id"])
+        df_clean = df_normalized.dropDuplicates(["establecimiento_id"])
         
         (
             df_clean
