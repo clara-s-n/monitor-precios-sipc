@@ -140,6 +140,11 @@ class DimensionBuilder:
         """Construye dimensión ubicación con información geográfica.
         
         Extrae información de ubicación de los establecimientos.
+        
+        Nota: En esta implementación, ubicacion_id = establecimiento_id para simplicidad,
+        asumiendo una relación 1:1 entre establecimientos y ubicaciones. Si en el futuro
+        múltiples establecimientos comparten ubicación (ej: varios comercios en un mall),
+        será necesario rediseñar esta dimensión para deduplicar por atributos geográficos.
         """
         logger.info("Construyendo dim_ubicacion...")
         

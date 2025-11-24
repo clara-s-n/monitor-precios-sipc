@@ -13,6 +13,17 @@ from src.utils.paths import DataLakePaths
 logger = logging.getLogger(__name__)
 
 
+# Definición de canasta básica compartida
+# Productos esenciales para calcular el costo de vida
+CANASTA_BASICA = [
+    "Arroz blanco",
+    "Aceite de girasol",
+    "Fideos",
+    "Yerba mate",
+    "Leche entera"
+]
+
+
 def calculate_simple_metrics() -> None:
     """Calcula las 6 métricas principales de forma simplificada."""
     spark = get_spark_session("SimpleMetrics")
@@ -74,8 +85,6 @@ def calculate_simple_metrics() -> None:
         
         # 4. Canasta básica
         logger.info("4. Calculando canasta básica...")
-        CANASTA = ["Arroz blanco", "Aceite de girasol", "Fideos", "Yerba mate", "Leche entera"]
-        
         canasta = (
             fact.alias("f")
             .join(dim_producto.select("producto_id", "categoria").alias("p"),
@@ -84,7 +93,7 @@ def calculate_simple_metrics() -> None:
                   F.col("f.fecha_id") == F.col("t.fecha_id"))
             .join(dim_establecimiento.select("establecimiento_id", F.col("nombre").alias("supermercado")).alias("e"),
                   F.col("f.establecimiento_id") == F.col("e.establecimiento_id"))
-            .filter(F.col("p.categoria").isin(CANASTA))
+            .filter(F.col("p.categoria").isin(CANASTA_BASICA))
             .groupBy("e.supermercado", "t.anio", "t.mes")
             .agg(F.sum("f.precio").alias("costo_canasta"))
             .orderBy("t.anio", "t.mes", "costo_canasta")

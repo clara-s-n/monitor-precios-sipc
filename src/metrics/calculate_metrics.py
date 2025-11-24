@@ -7,6 +7,9 @@ Implementa las 6 métricas principales del proyecto:
 4. Costo de canasta básica por supermercado
 5. Índice de dispersión de precios
 6. Ranking de supermercados según costo total
+
+NOTA: Esta implementación es más completa pero puede tener problemas de resolución de columnas
+      en algunos entornos Spark. Para producción, usar simple_metrics.py que es más robusta.
 """
 
 import logging
@@ -19,22 +22,19 @@ from src.utils.paths import DataLakePaths
 logger = logging.getLogger(__name__)
 
 
+# Definición de canasta básica compartida
+# Productos esenciales para calcular el costo de vida
+CANASTA_BASICA = [
+    "Arroz blanco",
+    "Aceite de girasol",
+    "Fideos",
+    "Yerba mate",
+    "Leche entera"
+]
+
+
 class MetricsCalculator:
     """Calculador de métricas de negocio sobre datos de precios."""
-    
-    # Definir una canasta básica de productos comunes
-    CANASTA_BASICA = [
-        "Arroz blanco",
-        "Aceite de girasol",
-        "Aceite de soja", 
-        "Fideos",
-        "Harina de trigo",
-        "Azúcar",
-        "Sal fina",
-        "Yerba mate",
-        "Leche entera",
-        "Pan"
-    ]
     
     def __init__(self):
         self.spark = get_spark_session("CalculateMetrics")
@@ -263,7 +263,7 @@ class MetricsCalculator:
         )
         
         # Filtrar solo productos de la canasta básica
-        df_canasta = df.filter(F.col("categoria").isin(self.CANASTA_BASICA))
+        df_canasta = df.filter(F.col("categoria").isin(CANASTA_BASICA))
         
         # Calcular costo promedio de cada producto por establecimiento y mes
         costo_por_producto = (
@@ -338,7 +338,7 @@ class MetricsCalculator:
         # Si no existe, calcularla primero
         try:
             df_canasta = self.spark.read.parquet(canasta_path)
-        except:
+        except FileNotFoundError:
             logger.warning("Canasta básica no encontrada, calculándola primero...")
             self.calculate_canasta_basica()
             df_canasta = self.spark.read.parquet(canasta_path)
