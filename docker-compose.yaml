@@ -3,7 +3,6 @@ services:
     build: ./airflow
     container_name: airflow
     restart: unless-stopped
-    user: "${AIRFLOW_UID:-50000}:0"
     environment:
       # Config básica de Airflow
       AIRFLOW_HOME: /opt/airflow
@@ -25,14 +24,6 @@ services:
       - ./src:/opt/airflow/src
     ports:
       - "8080:8080"
-    command: >
-      bash -c "
-        mkdir -p /opt/airflow/logs /opt/airflow/dags /opt/airflow/plugins &&
-        chmod -R 777 /opt/airflow/logs &&
-        airflow db init &&
-        airflow webserver & 
-        airflow scheduler
-      "
 
   jupyter:
     image: jupyter/pyspark-notebook:latest
