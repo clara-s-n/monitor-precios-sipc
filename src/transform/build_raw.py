@@ -75,8 +75,6 @@ class RawZoneBuilder:
                 self.spark.read
                 .option("header", "true")
                 .option("inferSchema", "false")
-                .option("delimiter", ";")
-                .option("encoding", "ISO-8859-1")
                 .csv(str(file_path))
             )
             dfs.append(df_year)
@@ -86,15 +84,27 @@ class RawZoneBuilder:
         for df_next in dfs[1:]:
             df = df.unionByName(df_next, allowMissingColumns=True)
         
+        # Mapear columnas SIPC a esquema estándar
+        df_mapped = (
+            df
+            .withColumnRenamed("Fecha", "fecha")
+            .withColumnRenamed("Precio", "precio")
+            .withColumnRenamed("Establecimiento", "establecimiento_id")
+            .withColumnRenamed("Presentacion_Producto", "producto_id")
+        )
+        
         # Limpiar y tipear datos
         df_clean = (
-            df
+            df_mapped
             .withColumn("fecha", F.to_date(F.col("fecha"), "yyyy-MM-dd"))
             .withColumn("precio", F.col("precio").cast(DoubleType()))
+            .withColumn("producto_id", F.col("producto_id").cast(StringType()))
+            .withColumn("establecimiento_id", F.col("establecimiento_id").cast(StringType()))
             .filter(F.col("precio").isNotNull())
             .filter(F.col("precio") > 0)
             .filter(F.col("producto_id").isNotNull())
             .filter(F.col("establecimiento_id").isNotNull())
+            .select("fecha", "producto_id", "establecimiento_id", "precio")
         )
         
         # Guardar como Parquet particionado por fecha
@@ -131,7 +141,6 @@ class RawZoneBuilder:
                 self.spark.read
                 .option("header", "true")
                 .option("delimiter", ";")
-                .option("encoding", "ISO-8859-1")
                 .csv(str(file_path))
             )
             dfs.append(df_year)
@@ -141,15 +150,16 @@ class RawZoneBuilder:
         for df_next in dfs[1:]:
             df = df.unionByName(df_next, allowMissingColumns=True)
         
-        # Normalizar nombres de columnas
+        # Normalizar nombres de columnas y mapear
         df_normalized = (
             df
             .withColumnRenamed("id.producto", "producto_id")
-            .withColumn("categoria", F.col("producto"))  # Usar producto como categoría base
+            .withColumn("categoria", F.col("producto"))
             .withColumn("subcategoria", F.col("especificacion"))
+            .select("producto_id", "nombre", "categoria", "subcategoria", "marca")
         )
         
-        # Deduplicar por producto_id (puede haber duplicados entre años)
+        # Deduplicar por producto_id
         df_clean = df_normalized.dropDuplicates(["producto_id"])
         
         (
@@ -184,7 +194,6 @@ class RawZoneBuilder:
                 self.spark.read
                 .option("header", "true")
                 .option("delimiter", ";")
-                .option("encoding", "ISO-8859-1")
                 .csv(str(file_path))
             )
             dfs.append(df_year)
@@ -194,15 +203,17 @@ class RawZoneBuilder:
         for df_next in dfs[1:]:
             df = df.unionByName(df_next, allowMissingColumns=True)
         
-        # Normalizar nombres de columnas
+        # Normalizar nombres de columnas y mapear
         df_normalized = (
             df
             .withColumnRenamed("id.establecimientos", "establecimiento_id")
             .withColumnRenamed("razon.social", "razon_social")
             .withColumnRenamed("nombre.sucursal", "nombre")
+            .select("establecimiento_id", "nombre", "cadena", "depto", "ciudad", "direccion")
+            .withColumnRenamed("depto", "departamento")
         )
         
-        # Deduplicar por establecimiento_id (puede haber duplicados entre años)
+        # Deduplicar por establecimiento_id
         df_clean = df_normalized.dropDuplicates(["establecimiento_id"])
         
         (

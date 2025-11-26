@@ -3,6 +3,9 @@
 Orquesta la ingesta, transformación y cálculo de métricas.
 """
 
+import sys
+sys.path.insert(0, '/opt/airflow')
+
 from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.python import PythonOperator
