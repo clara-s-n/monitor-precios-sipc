@@ -13,14 +13,66 @@ from src.utils.paths import DataLakePaths
 logger = logging.getLogger(__name__)
 
 
-# Definición de canasta básica compartida
+# Definición de canasta básica basada en CBAEN 2024 (Tabla 2)
 # Productos esenciales para calcular el costo de vida
 CANASTA_BASICA = [
+    # Carnes
+    "Carne picada vacuna",
+    "Aguja vacuna",
+    "Pollo entero fresco con menudos",
+    
+    # Pescados y huevos
+    "Pescado fresco",
+    "Huevos colorados",
+    
+    # Frutas
+    "Naranja Navel", "Naranja Valencia",
+    "Mandarina Avana", "Mandarina Común", "Mandarina Ellendale", "Mandarina Zazuma",
+    "Pera Francesa", "Pera Packams", "Pera Williams",
+    "Manzana Fuji", "Manzana Granny Smith", "Manzana Red Chieff",
+    "Manzana Red Deliciosa", "Manzana Roja", "Manzana Royal Gala",
+    "Banana Brasil", "Banana Ecuador",
+    "Durazno Pavía", "Durazno Rey del Monte",
+    "Frutilla",
+    "Limón",
+    
+    # Verduras
+    "Zanahoria",
+    "Lechuga Crespa", "Lechuga Mantecosa",
+    "Tomate Americano", "Tomate Perita",
+    "Cebolla Seca", "Cebolla de Verdeo",
+    "Zapallo Criollo", "Zapallo Kabutiá", "Zapallo Calabacín",
+    "Morrón Amarillo", "Morrón Rojo", "Morrón Verde",
+    "Zapallito Redondo", "Zapallito Zuchini",
+    
+    # Tubérculos
+    "Papa Blanca", "Papa Rosada",
+    "Boniato Arapery", "Boniato Morado",
+    
+    # Cereales
+    "Harina trigo común 0000", "Harina trigo común 000",
     "Arroz blanco",
+    "Fideos secos al huevo", "Fideos secos semolados",
+    "Pan flauta",
+    "Pan de molde lacteado",  # Aproximación a Pan Porteño
+    
+    # Leguminosas
+    "Arvejas", "Arvejas en conserva",
+    
+    # Azúcares y dulces
+    "Azúcar blanco",
+    "Dulce de leche",
+    "Dulce de membrillo",
+    
+    # Aceites y grasas
+    "Aceite de soja",
     "Aceite de girasol",
-    "Fideos",
-    "Yerba mate",
-    "Leche entera"
+    "Manteca",
+    
+    # Otros (infusiones / varios)
+    "Sal fina yodada fluorada",
+    "Yerba mate común",
+    "Agua de mesa con gas", "Agua de mesa sin gas",
 ]
 
 
@@ -87,13 +139,13 @@ def calculate_simple_metrics() -> None:
         logger.info("4. Calculando canasta básica...")
         canasta = (
             fact.alias("f")
-            .join(dim_producto.select("producto_id", "categoria").alias("p"),
+            .join(dim_producto.select("producto_id", F.col("nombre").alias("producto_nombre")).alias("p"),
                   F.col("f.producto_id") == F.col("p.producto_id"))
             .join(dim_tiempo.select("fecha_id", "anio", "mes").alias("t"),
                   F.col("f.fecha_id") == F.col("t.fecha_id"))
             .join(dim_establecimiento.select("establecimiento_id", F.col("nombre").alias("supermercado")).alias("e"),
                   F.col("f.establecimiento_id") == F.col("e.establecimiento_id"))
-            .filter(F.col("p.categoria").isin(CANASTA_BASICA))
+            .filter(F.col("p.producto_nombre").isin(CANASTA_BASICA))
             .groupBy("e.supermercado", "t.anio", "t.mes")
             .agg(F.sum("f.precio").alias("costo_canasta"))
             .orderBy("t.anio", "t.mes", "costo_canasta")

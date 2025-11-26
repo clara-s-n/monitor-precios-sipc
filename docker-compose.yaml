@@ -32,6 +32,9 @@ services:
     # 3. CAMBIO IMPORTANTE: Comando limpio. Sin 'chmod' ni 'db init'.
     command: >
       bash -c "
+        mkdir -p /opt/airflow/logs /opt/airflow/dags /opt/airflow/plugins &&
+        chmod -R 777 /opt/airflow/logs &&
+        airflow db init &&
         airflow webserver & 
         airflow scheduler
       "
