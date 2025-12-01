@@ -11,14 +11,14 @@ from airflow.operators.python import PythonOperator
 # 🚨 INICIO DE LA CORRECCIÓN DE RUTAS 🚨
 import os
 import sys
-# La carpeta 'src' está al mismo nivel que 'dags' dentro de /opt/airflow.
-# Añadimos la ruta '/opt/airflow/src' al PythonPath.
-# El archivo DAG está en /opt/airflow/dags/.
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
-# 🚨 FIN DE LA CORRECCIÓN DE RUTAS 🚨
-# =========================================================================
 
-# Importar funciones de procesamiento desde src/
+# Añadir /opt/airflow al PYTHONPATH para que se pueda importar "src"
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(CURRENT_DIR)  # /opt/airflow
+
+if PROJECT_ROOT not in sys.path:
+    sys.path.append(PROJECT_ROOT)
+
 from src.ingestion.ingest_landing import ingest_landing_data
 from src.transform.build_raw import transform_to_raw
 from src.transform.build_dimensions import build_dimensions

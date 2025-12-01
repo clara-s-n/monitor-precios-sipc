@@ -63,7 +63,7 @@ class RawZoneBuilder:
             self.spark.read
             .option("header", "true")
             .option("inferSchema", "false")
-            .option("delimiter", ";")
+            .option("delimiter", ",")
             .option("encoding", "ISO-8859-1")
             .csv(landing_file)
         )
@@ -71,8 +71,14 @@ class RawZoneBuilder:
         # Limpiar y tipear datos
         df_clean = (
             df
-            .withColumn("fecha", F.to_date(F.col("fecha"), "yyyy-MM-dd"))
-            .withColumn("precio", F.col("precio").cast(DoubleType()))
+            # Fecha del CSV -> columna fecha (DATE)
+            .withColumn("fecha", F.to_date(F.col("Fecha").cast("string"), "yyyy-MM-dd"))
+            # Precio numérico
+            .withColumn("precio", F.col("Precio").cast(DoubleType()))
+            # IDs lógicos
+            .withColumn("producto_id", F.col("Presentacion_Producto").cast(StringType()))
+            .withColumn("establecimiento_id", F.col("Establecimiento").cast(StringType()))
+            # Filtros básicos
             .filter(F.col("precio").isNotNull())
             .filter(F.col("precio") > 0)
             .filter(F.col("producto_id").isNotNull())
