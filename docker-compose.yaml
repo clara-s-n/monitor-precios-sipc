@@ -62,12 +62,16 @@ services:
     restart: unless-stopped
     environment:
       JUPYTER_ENABLE_LAB: "yes"
+      JUPYTER_TOKEN: ""
+      GRANT_SUDO: "yes"
+    user: root
     volumes:
       - ./notebooks:/home/jovyan/work
       - ./data_sipc:/home/jovyan/work/data_sipc
       - ./src:/home/jovyan/work/src
     ports:
       - "8888:8888"
+    command: start-notebook.sh --NotebookApp.token='' --NotebookApp.password=''
 
 volumes:
   postgres-db-volume:
