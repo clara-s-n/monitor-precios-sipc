@@ -64,7 +64,9 @@ class RawZoneBuilder:
             .option("header", "true")
             .option("inferSchema", "false")
             .option("delimiter", ",")
-            .option("encoding", "ISO-8859-1")
+            .option("quote", '"')
+            .option("escape", '"')
+            .option("encoding", "UTF-8")
             .csv(landing_file)
         )
         
@@ -72,12 +74,16 @@ class RawZoneBuilder:
         df_clean = (
             df
             # Fecha del CSV -> columna fecha (DATE)
-            .withColumn("fecha", F.to_date(F.col("Fecha").cast("string"), "yyyy-MM-dd"))
+            .withColumn("fecha", F.to_date(F.col("Fecha"), "yyyy-MM-dd"))
             # Precio numérico
             .withColumn("precio", F.col("Precio").cast(DoubleType()))
             # IDs lógicos
             .withColumn("producto_id", F.col("Presentacion_Producto").cast(StringType()))
             .withColumn("establecimiento_id", F.col("Establecimiento").cast(StringType()))
+            # Columnas adicionales útiles
+            .withColumn("oferta", F.col("Oferta").cast(IntegerType()))
+            # Seleccionar solo las columnas necesarias
+            .select("fecha", "producto_id", "establecimiento_id", "precio", "oferta")
             # Filtros básicos
             .filter(F.col("precio").isNotNull())
             .filter(F.col("precio") > 0)
@@ -85,16 +91,20 @@ class RawZoneBuilder:
             .filter(F.col("establecimiento_id").isNotNull())
         )
         
-        # Guardar como Parquet particionado por fecha
+        # Contar registros antes de escribir
+        count = df_clean.count()
+        logger.info(f"Escribiendo {count} registros de precios...")
+        
+        # Guardar como Parquet sin particionamiento (para evitar errores de mkdirs con muchas particiones)
+        # El particionamiento se puede agregar después si es necesario para optimización
         (
             df_clean
             .write
             .mode("overwrite")
-            .partitionBy("fecha")
             .parquet(raw_table)
         )
         
-        logger.info(f"✅ Precios procesados: {df_clean.count()} registros -> {raw_table}")
+        logger.info(f"✅ Precios procesados: {count} registros -> {raw_table}")
     
     def process_productos(self) -> None:
         """Procesa archivo de productos a formato Parquet."""
