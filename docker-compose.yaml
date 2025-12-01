@@ -11,7 +11,9 @@ services:
       AIRFLOW__CORE__LOAD_EXAMPLES: "False"
       AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/dags
       # 1. CAMBIO IMPORTANTE: Guardar la DB en una carpeta dedicada 'data'
-      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: sqlite:////opt/airflow/data/airflow.db
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: sqlite:////opt/airflow/data/airflow.db?timeout=30
+      AIRFLOW__DATABASE__SQL_ALCHEMY_POOL_SIZE: 0
+      AIRFLOW__DATABASE__SQL_ALCHEMY_MAX_OVERFLOW: 0
       # Deshabilitar login para simplificar (solo dev)
       AIRFLOW__WEBSERVER__AUTHENTICATE: "False"
       # Solución al error de módulos

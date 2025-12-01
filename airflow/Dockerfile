@@ -23,4 +23,5 @@ USER airflow
 RUN pip install --no-cache-dir \
     pandas==2.1.4 \
     pyarrow==14.0.1 \
-    pyspark==3.4.1
+    pyspark==3.4.1 \
+    psycopg2-binary==2.9.9
