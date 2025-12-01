@@ -4,7 +4,9 @@ Calcula las 6 métricas principales de forma robusta evitando ambigüedades.
 """
 
 import logging
-from pyspark.sql import DataFrame, Window
+import shutil
+from pathlib import Path
+from pyspark.sql import DataFrame, Window, SparkSession
 from pyspark.sql import functions as F
 
 from src.utils.spark_session import get_spark_session, stop_spark_session
@@ -76,6 +78,25 @@ CANASTA_BASICA = [
 ]
 
 
+def _clean_output_dir(spark: SparkSession, output_path: str) -> None:
+    """Limpia directorio de salida si existe para evitar conflictos de permisos."""
+    path = Path(output_path)
+    if path.exists():
+        logger.info(f"Limpiando directorio existente: {output_path}")
+        try:
+            shutil.rmtree(output_path, ignore_errors=True)
+        except Exception as e:
+            logger.warning(f"No se pudo limpiar con shutil: {e}")
+        
+        try:
+            hadoop_conf = spark._jsc.hadoopConfiguration()
+            fs = spark._jvm.org.apache.hadoop.fs.FileSystem.get(hadoop_conf)
+            fs.delete(spark._jvm.org.apache.hadoop.fs.Path(output_path), True)
+            logger.info(f"Directorio limpiado exitosamente: {output_path}")
+        except Exception as e:
+            logger.warning(f"No se pudo limpiar con Hadoop FS: {e}")
+
+
 def calculate_simple_metrics() -> None:
     """Calcula las 6 métricas principales de forma simplificada."""
     spark = get_spark_session("SimpleMetrics")
@@ -102,7 +123,9 @@ def calculate_simple_metrics() -> None:
             .agg(F.avg("f.precio").alias("precio_promedio"))
             .orderBy("t.anio", "t.mes", "p.producto")
         )
-        precio_prom.write.mode("overwrite").parquet(str(paths.get_export_file("precio_promedio.parquet")))
+        output_path = str(paths.get_export_file("precio_promedio.parquet"))
+        _clean_output_dir(spark, output_path)
+        precio_prom.write.parquet(output_path)
         logger.info(f"   ✅ {precio_prom.count()} registros")
         
         # 2. Min/Max por producto
@@ -121,7 +144,9 @@ def calculate_simple_metrics() -> None:
             )
             .orderBy("t.anio", "t.mes")
         )
-        min_max.write.mode("overwrite").parquet(str(paths.get_export_file("min_max_precios.parquet")))
+        output_path = str(paths.get_export_file("min_max_precios.parquet"))
+        _clean_output_dir(spark, output_path)
+        min_max.write.parquet(output_path)
         logger.info(f"   ✅ {min_max.count()} registros")
         
         # 3. Índice de dispersión
@@ -132,7 +157,9 @@ def calculate_simple_metrics() -> None:
                        (F.col("precio_maximo") - F.col("precio_minimo")) / F.col("precio_promedio"))
             .orderBy(F.desc("indice_dispersion"))
         )
-        dispersion.write.mode("overwrite").parquet(str(paths.get_export_file("dispersion_precios.parquet")))
+        output_path = str(paths.get_export_file("dispersion_precios.parquet"))
+        _clean_output_dir(spark, output_path)
+        dispersion.write.parquet(output_path)
         logger.info(f"   ✅ {dispersion.count()} registros")
         
         # 4. Canasta básica
@@ -150,7 +177,9 @@ def calculate_simple_metrics() -> None:
             .agg(F.sum("f.precio").alias("costo_canasta"))
             .orderBy("t.anio", "t.mes", "costo_canasta")
         )
-        canasta.write.mode("overwrite").parquet(str(paths.get_export_file("canasta_basica.parquet")))
+        output_path = str(paths.get_export_file("canasta_basica.parquet"))
+        _clean_output_dir(spark, output_path)
+        canasta.write.parquet(output_path)
         logger.info(f"   ✅ {canasta.count()} registros")
         
         # 5. Ranking supermercados
@@ -161,7 +190,9 @@ def calculate_simple_metrics() -> None:
             .withColumn("ranking", F.row_number().over(window))
             .orderBy("anio", "mes", "ranking")
         )
-        ranking.write.mode("overwrite").parquet(str(paths.get_export_file("ranking_supermercados.parquet")))
+        output_path = str(paths.get_export_file("ranking_supermercados.parquet"))
+        _clean_output_dir(spark, output_path)
+        ranking.write.parquet(output_path)
         logger.info(f"   ✅ {ranking.count()} registros")
         
         # 6. Variación mensual simplificada
@@ -186,7 +217,9 @@ def calculate_simple_metrics() -> None:
                        .otherwise(None))
             .filter(F.col("variacion_pct").isNotNull())
         )
-        variacion.write.mode("overwrite").parquet(str(paths.get_export_file("variacion_mensual.parquet")))
+        output_path = str(paths.get_export_file("variacion_mensual.parquet"))
+        _clean_output_dir(spark, output_path)
+        variacion.write.parquet(output_path)
         logger.info(f"   ✅ {variacion.count()} registros")
         
         logger.info("✅ Todas las métricas calculadas exitosamente")

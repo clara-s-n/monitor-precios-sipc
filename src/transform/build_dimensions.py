@@ -8,6 +8,8 @@ Crea las 4 dimensiones del modelo:
 """
 
 import logging
+import shutil
+from pathlib import Path
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
 from pyspark.sql.window import Window
@@ -25,6 +27,24 @@ class DimensionBuilder:
         self.spark = get_spark_session("BuildDimensions")
         self.paths = DataLakePaths()
         self.paths.ensure_directories()
+    
+    def _clean_output_dir(self, output_path: str) -> None:
+        """Limpia directorio de salida si existe para evitar conflictos de permisos."""
+        path = Path(output_path)
+        if path.exists():
+            logger.info(f"Limpiando directorio existente: {output_path}")
+            try:
+                shutil.rmtree(output_path, ignore_errors=True)
+            except Exception as e:
+                logger.warning(f"No se pudo limpiar con shutil: {e}")
+            
+            try:
+                hadoop_conf = self.spark._jsc.hadoopConfiguration()
+                fs = self.spark._jvm.org.apache.hadoop.fs.FileSystem.get(hadoop_conf)
+                fs.delete(self.spark._jvm.org.apache.hadoop.fs.Path(output_path), True)
+                logger.info(f"Directorio limpiado exitosamente: {output_path}")
+            except Exception as e:
+                logger.warning(f"No se pudo limpiar con Hadoop FS: {e}")
     
     def build_dim_tiempo(self) -> None:
         """Construye dimensión tiempo a partir de fechas en precios.
@@ -58,10 +78,11 @@ class DimensionBuilder:
         
         # Guardar dimensión
         output_path = str(self.paths.get_refined_table("dim_tiempo"))
+        self._clean_output_dir(output_path)
+        
         (
             dim_tiempo
             .write
-            .mode("overwrite")
             .parquet(output_path)
         )
         
@@ -95,10 +116,11 @@ class DimensionBuilder:
         
         # Guardar dimensión
         output_path = str(self.paths.get_refined_table("dim_producto"))
+        self._clean_output_dir(output_path)
+        
         (
             dim_producto
             .write
-            .mode("overwrite")
             .parquet(output_path)
         )
         
@@ -127,10 +149,11 @@ class DimensionBuilder:
         
         # Guardar dimensión
         output_path = str(self.paths.get_refined_table("dim_establecimiento"))
+        self._clean_output_dir(output_path)
+        
         (
             dim_establecimiento
             .write
-            .mode("overwrite")
             .parquet(output_path)
         )
         
@@ -170,10 +193,11 @@ class DimensionBuilder:
         
         # Guardar dimensión
         output_path = str(self.paths.get_refined_table("dim_ubicacion"))
+        self._clean_output_dir(output_path)
+        
         (
             dim_ubicacion
             .write
-            .mode("overwrite")
             .parquet(output_path)
         )
         
