@@ -3,7 +3,6 @@ services:
     build: ./airflow
     container_name: airflow
     restart: unless-stopped
-    user: "${AIRFLOW_UID:-50000}:0"
     environment:
       PYTHONPATH: /opt/airflow/src
       # Config básica de Airflow
@@ -32,9 +31,10 @@ services:
     # 3. CAMBIO IMPORTANTE: Comando limpio. Sin 'chmod' ni 'db init'.
     command: >
       bash -c "
-        mkdir -p /opt/airflow/logs /opt/airflow/dags /opt/airflow/plugins &&
-        chmod -R 777 /opt/airflow/logs &&
+        mkdir -p /opt/airflow/logs /opt/airflow/dags /opt/airflow/plugins /opt/airflow/data &&
+        chmod -R 777 /opt/airflow/logs /opt/airflow/data &&
         airflow db init &&
+        airflow users create --username admin --firstname Airflow --lastname Admin --email airflowadmin@example.com --role Admin --password admin || true &&
         airflow webserver & 
         airflow scheduler
       "
