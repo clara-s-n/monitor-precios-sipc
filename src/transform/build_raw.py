@@ -4,6 +4,8 @@ Procesa CSVs y los convierte a Parquet con tipos correctos.
 """
 
 import logging
+import shutil
+from pathlib import Path
 from pyspark.sql import DataFrame
 from pyspark.sql.types import (
     StructType, StructField, StringType, DoubleType, 
@@ -52,6 +54,26 @@ class RawZoneBuilder:
         self.paths = DataLakePaths()
         self.paths.ensure_directories()
     
+    def _clean_output_dir(self, output_path: str) -> None:
+        """Limpia directorio de salida si existe para evitar conflictos de permisos."""
+        path = Path(output_path)
+        if path.exists():
+            logger.info(f"Limpiando directorio existente: {output_path}")
+            try:
+                # Intentar con shutil primero
+                shutil.rmtree(output_path, ignore_errors=True)
+            except Exception as e:
+                logger.warning(f"No se pudo limpiar con shutil: {e}")
+            
+            # También intentar con Hadoop FileSystem de Spark
+            try:
+                hadoop_conf = self.spark._jsc.hadoopConfiguration()
+                fs = self.spark._jvm.org.apache.hadoop.fs.FileSystem.get(hadoop_conf)
+                fs.delete(self.spark._jvm.org.apache.hadoop.fs.Path(output_path), True)
+                logger.info(f"Directorio limpiado exitosamente: {output_path}")
+            except Exception as e:
+                logger.warning(f"No se pudo limpiar con Hadoop FS: {e}")
+    
     def process_precios(self) -> None:
         """Procesa archivo de precios a formato Parquet."""
         logger.info("Procesando precios...")
@@ -95,12 +117,13 @@ class RawZoneBuilder:
         count = df_clean.count()
         logger.info(f"Escribiendo {count} registros de precios...")
         
-        # Guardar como Parquet sin particionamiento (para evitar errores de mkdirs con muchas particiones)
-        # El particionamiento se puede agregar después si es necesario para optimización
+        # Limpiar directorio de salida antes de escribir
+        self._clean_output_dir(raw_table)
+        
+        # Guardar como Parquet (ya limpiamos manualmente, no usar overwrite)
         (
             df_clean
             .write
-            .mode("overwrite")
             .parquet(raw_table)
         )
         
@@ -131,6 +154,9 @@ class RawZoneBuilder:
         
         # Deduplicar por producto_id
         df_clean = df_normalized.dropDuplicates(["producto_id"])
+        
+        # Limpiar directorio de salida antes de escribir
+        self._clean_output_dir(raw_table)
         
         (
             df_clean
@@ -166,6 +192,9 @@ class RawZoneBuilder:
         
         # Deduplicar por establecimiento_id
         df_clean = df_normalized.dropDuplicates(["establecimiento_id"])
+        
+        # Limpiar directorio de salida antes de escribir
+        self._clean_output_dir(raw_table)
         
         (
             df_clean
