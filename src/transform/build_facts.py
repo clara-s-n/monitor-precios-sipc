@@ -100,7 +100,6 @@ class FactBuilder:
                 "establecimiento_id",
                 "ubicacion_id",
                 "precio",
-                "unidad",
                 "fecha"  # Mantener fecha para facilitar consultas
             )
         )
