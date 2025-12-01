@@ -3,16 +3,19 @@ services:
     build: ./airflow
     container_name: airflow
     restart: unless-stopped
+    user: "${AIRFLOW_UID:-50000}:0"
     environment:
+      PYTHONPATH: /opt/airflow/src
       # Config básica de Airflow
       AIRFLOW_HOME: /opt/airflow
       AIRFLOW__CORE__EXECUTOR: SequentialExecutor
       AIRFLOW__CORE__LOAD_EXAMPLES: "False"
       AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/dags
-      # DB sqlite simple para desarrollo
-      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: sqlite:////opt/airflow/airflow.db
+      # 1. CAMBIO IMPORTANTE: Guardar la DB en una carpeta dedicada 'data'
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: sqlite:////opt/airflow/data/airflow.db
       # Deshabilitar login para simplificar (solo dev)
       AIRFLOW__WEBSERVER__AUTHENTICATE: "False"
+      # Solución al error de módulos
       _AIRFLOW_WWW_USER_CREATE: "False"
       _AIRFLOW_WWW_USER_USERNAME: admin
       _AIRFLOW_WWW_USER_PASSWORD: admin
@@ -22,12 +25,13 @@ services:
       - ./airflow/plugins:/opt/airflow/plugins
       - ./data_sipc:/opt/airflow/data_sipc
       - ./src:/opt/airflow/src
+      # 2. CAMBIO IMPORTANTE: Volumen para guardar la base de datos
+      - ./airflow/data:/opt/airflow/data
     ports:
       - "8080:8080"
+    # 3. CAMBIO IMPORTANTE: Comando limpio. Sin 'chmod' ni 'db init'.
     command: >
       bash -c "
-        mkdir -p /opt/airflow/logs /opt/airflow/dags /opt/airflow/plugins &&
-        airflow db init &&
         airflow webserver & 
         airflow scheduler
       "

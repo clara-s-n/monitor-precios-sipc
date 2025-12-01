@@ -7,6 +7,17 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 
+# =========================================================================
+# 🚨 INICIO DE LA CORRECCIÓN DE RUTAS 🚨
+import os
+import sys
+# La carpeta 'src' está al mismo nivel que 'dags' dentro de /opt/airflow.
+# Añadimos la ruta '/opt/airflow/src' al PythonPath.
+# El archivo DAG está en /opt/airflow/dags/.
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
+# 🚨 FIN DE LA CORRECCIÓN DE RUTAS 🚨
+# =========================================================================
+
 # Importar funciones de procesamiento desde src/
 from src.ingestion.ingest_landing import ingest_landing_data
 from src.transform.build_raw import transform_to_raw
