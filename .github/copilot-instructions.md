@@ -13,7 +13,7 @@ This project builds a **Data Lake + ETL pipeline** orchestrated with **Apache Ai
 2. **Dimensional Model**: Implement star schema with fact and dimension tables
 3. **Business Metrics**: Calculate 6 key indicators for price analysis
 4. **Orchestration**: Automate workflow with Apache Airflow
-5. **Documentation**: Comprehensive technical report and presentation (15 min max)
+5. **Jupyter Notebooks**: Complete exploratory analysis and visualizations for metrics
 
 ## Architecture & Key Concepts
 
@@ -235,111 +235,70 @@ All 6 required metrics are implemented in `src/metrics/simple_metrics.py` and ex
 - ✅ `simple_metrics.py`: Calculate all 6 required business metrics
 - ✅ Airflow DAG orchestration (end-to-end pipeline working)
 
+**Jupyter Notebooks:**
+- ✅ `01_exploracion.ipynb`: Complete exploratory data analysis
+- ✅ `02_modelo_datos.ipynb`: Star schema documentation and validation
+- ✅ `03_dashboard.ipynb`: All 6 metrics with visualizations, analysis, and conclusions
+
 **Technical Fixes:**
 - ✅ Resolved Spark write permission issues in Docker volumes
 - ✅ CSV delimiter and encoding corrections
 - ✅ Removed partitioning strategy to avoid filesystem conflicts
 
-### 🔄 In Progress / Next Steps
+### 🔄 Current Focus (December 1-2, 2024)
 
-**Phase 1: Data Quality & Validation (Dec 1-5)**
-- [ ] Create data quality checks module (`src/quality/`)
-  - [ ] Validate data completeness (null checks, required fields)
-  - [ ] Check referential integrity between dimensions and facts
-  - [ ] Identify and log anomalies (negative prices, outliers)
-  - [ ] Add Great Expectations or custom PySpark validators
-- [ ] Integrate quality checks into Airflow DAG as separate tasks
-- [ ] Generate data quality report (summary statistics, validation results)
+**DEADLINE: December 2, 2024**
 
-**Phase 2: Advanced Analytics & Visualizations (Dec 6-10)**
-- [ ] Complete Jupyter notebooks:
-  - [ ] `01_exploracion.ipynb`: EDA on raw SIPC data (distributions, trends)
-  - [ ] `02_modelo_datos.ipynb`: Document star schema design with ERD diagrams
-  - [ ] `03_dashboard.ipynb`: Interactive visualizations with plotly/matplotlib
-- [ ] Create additional analytical queries:
-  - [ ] Time series analysis (seasonal patterns, price trends)
-  - [ ] Geographic analysis (price differences by department/city)
-  - [ ] Correlation analysis (price vs. product category, brand, location)
-- [ ] Export visualization-ready datasets (CSV for easy sharing)
+**Priority Tasks:**
+- [x] Complete all 3 Jupyter notebooks with 6 metrics
+- [x] Ensure pipeline runs successfully end-to-end
+- [ ] Test notebooks execution from clean state
+- [ ] Final validation of all metrics calculations
+- [ ] Code cleanup and commenting
 
-**Phase 3: Documentation & Reporting (Dec 11-15)**
-- [ ] Technical report (PDF, ~15-20 pages):
-  - [ ] Introduction: Problem statement, objectives, data sources
-  - [ ] Architecture: Data Lake design, ETL pipeline, star schema
-  - [ ] Implementation: Key technical decisions, code structure
-  - [ ] Results: Metrics analysis, insights, visualizations
-  - [ ] Challenges & Solutions: Permission issues, data quality problems
-  - [ ] Conclusions: Lessons learned, future improvements
-- [ ] README.md improvements:
-  - [ ] Installation instructions (prerequisites, step-by-step setup)
-  - [ ] Usage guide (running DAG, accessing notebooks, viewing metrics)
-  - [ ] Architecture diagrams (data flow, schema ERD)
-  - [ ] Sample outputs and screenshots
-- [ ] Code documentation:
-  - [ ] Add docstrings to all functions/classes
-  - [ ] Inline comments for complex logic
-  - [ ] Type hints for function signatures
+**Optional Enhancements (if time permits):**
+- [ ] Add data quality checks to Airflow DAG
+- [ ] Improve README with usage examples
+- [ ] Add docstrings to key functions
+- [ ] Create simple validation tests
 
-**Phase 4: Presentation Preparation (Dec 16-19)**
-- [ ] Create presentation slides (15 min, ~12-15 slides):
-  - [ ] Slide 1: Title, team, course info
-  - [ ] Slides 2-3: Problem & objectives
-  - [ ] Slides 4-6: Architecture & technical approach
-  - [ ] Slides 7-10: Demo & key results (with visualizations)
-  - [ ] Slides 11-12: Challenges & lessons learned
-  - [ ] Slide 13: Conclusions & future work
-- [ ] Prepare live demo script (Airflow UI + notebook execution)
-- [ ] Rehearse presentation (timing, Q&A preparation)
-
-**Phase 5: Final Review & Submission (Dec 20)**
-- [ ] Final testing of complete pipeline
-- [ ] Code cleanup and refactoring
-- [ ] Submit all deliverables:
-  - [ ] Source code (GitHub repository)
-  - [ ] Technical report (PDF)
-  - [ ] Presentation slides (PDF/PPTX)
-  - [ ] Demo video (optional, if required)
+**Out of Scope for Current Iteration:**
+- Technical report (not required for Dec 2 deadline)
+- Presentation slides (not required for Dec 2 deadline)
+- Advanced visualizations beyond current notebooks
+- Extensive documentation beyond README
 
 ### 🎯 Deliverables Checklist
 
-**Required Submissions (Deadline: December 20, 2024):**
-- [ ] **Source Code**: GitHub repository with complete implementation
-- [ ] **Technical Report**: PDF document (15-20 pages) with:
-  - [ ] Introduction and objectives
-  - [ ] Technical architecture
-  - [ ] Implementation details
-  - [ ] Results and analysis
-  - [ ] Conclusions
-- [ ] **Presentation**: 15-minute presentation (12-15 slides)
-- [ ] **Working Demo**: Functioning Airflow pipeline + notebooks
+**Required for December 2, 2024:**
+- [x] **Source Code**: Complete ETL pipeline + notebooks
+- [x] **ETL Pipeline**: Functioning Airflow DAG with all transformations
+- [x] **Star Schema**: Dimensional model fully implemented
+- [x] **6 Metrics**: All business indicators calculated and exported
+- [x] **3 Notebooks**: Exploration, model documentation, and dashboard
+- [ ] **Pipeline Testing**: Verify end-to-end execution
+- [ ] **README**: Usage instructions for running the project
 
-**Quality Standards:**
-- [ ] Code follows PEP 8 style guidelines
-- [ ] All modules have docstrings and comments
-- [ ] Pipeline runs successfully end-to-end without manual intervention
-- [ ] All 6 metrics generate correct outputs
-- [ ] Documentation is clear and comprehensive
-- [ ] Presentation is professional and within time limit
+**Quality Standards (Current Iteration):**
+- [x] Pipeline runs successfully end-to-end without manual intervention
+- [x] All 6 metrics generate correct outputs
+- [x] Notebooks execute without errors
+- [ ] Basic code documentation (comments on complex logic)
+- [ ] README with clear setup and usage instructions
 
 ### 📊 Project Metrics & Success Criteria
 
 **Technical Success Criteria:**
 - ✅ ETL pipeline processes 20M+ records in <10 minutes
 - ✅ Star schema correctly models dimensional relationships
+**Technical Success Criteria:**
+- ✅ ETL pipeline processes 20M+ records in <10 minutes
+- ✅ Star schema correctly models dimensional relationships
 - ✅ All 6 business metrics calculate without errors
 - ✅ Airflow orchestration executes all tasks successfully
-- [ ] Data quality checks pass with >95% completeness
-- [ ] Notebooks generate visualizations without errors
-
-**Academic Success Criteria:**
-- [ ] Report demonstrates understanding of Big Data concepts
-- [ ] Implementation shows proper use of PySpark and Airflow
-- [ ] Analysis provides meaningful business insights
-- [ ] Presentation effectively communicates technical work
-- [ ] Code quality meets professional standards
-
-### 🚨 Risk Mitigation
-
+- ✅ Notebooks generate visualizations without errors
+- [ ] Pipeline can be executed from clean state
+- [ ] All components documented in README
 **Identified Risks:**
 1. **Data Quality Issues**: Missing values, inconsistent formats
    - Mitigation: Comprehensive validation in raw zone transformation
@@ -347,36 +306,18 @@ All 6 required metrics are implemented in `src/metrics/simple_metrics.py` and ex
    - Mitigation: Already optimized (6-min runtime), use Parquet compression
 3. **Technical Complexity**: Airflow/Spark integration challenges
    - Mitigation: Working pipeline achieved, document all solutions
-4. **Time Constraints**: 19 days until deadline
-   - Mitigation: Prioritized work plan with daily milestones
+### 📅 Timeline for Dec 2 Deadline
 
-**Contingency Plans:**
-- If visualization complexity grows: Focus on essential charts first
-- If report writing takes longer: Prepare outline early, write incrementally
-- If technical issues arise: Document workarounds, focus on core functionality
+**December 1 (Today):**
+- ✅ Complete all 3 notebooks with 6 metrics
+- ✅ Verify pipeline execution
+- [ ] Test from clean environment
+- [ ] Update README with usage instructions
 
-### 📅 Daily Milestones (Dec 1-20)
-
-- **Dec 1-2**: Data quality validation implementation
-- **Dec 3-4**: Exploratory data analysis notebook
-- **Dec 5-6**: Data model documentation notebook
-- **Dec 7-8**: Dashboard notebook with visualizations
-- **Dec 9-10**: Additional analytics and exports
-- **Dec 11-13**: Technical report writing (draft)
-- **Dec 14-15**: Report finalization and review
-- **Dec 16-17**: Presentation creation
-- **Dec 18**: Presentation rehearsal and refinement
-- **Dec 19**: Final review and testing
-- **Dec 20**: Submission and presentation
-
----
-
-## Quick Reference Commands
-
-```bash
-# Start environment
-docker-compose up -d
-
+**December 2 (Deadline):**
+- [ ] Final testing and validation
+- [ ] Code cleanup
+- [ ] Submission preparation
 # Stop environment
 docker-compose down
 
