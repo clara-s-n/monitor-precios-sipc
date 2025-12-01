@@ -280,6 +280,8 @@ ls -la data_sipc/exports_dashboard/
 
 ### Leer resultados en notebooks
 
+Ver la **guía completa de notebooks** en [`notebooks/README.md`](notebooks/README.md).
+
 ```python
 from pyspark.sql import SparkSession
 
@@ -292,3 +294,196 @@ precio_prom.show()
 # Análisis con Pandas
 df_pandas = precio_prom.toPandas()
 ```
+
+## 📓 Jupyter Notebooks
+
+El proyecto incluye 3 notebooks interactivos para análisis y visualización:
+
+### 1. `01_exploracion.ipynb` - Análisis Exploratorio
+
+**Propósito:** Entender la estructura y calidad de los datos raw
+
+**Contenido:**
+- Carga de datos desde zona RAW (Parquet)
+- Estadísticas descriptivas (20M+ registros de precios)
+- Distribuciones temporales y geográficas
+- Análisis de calidad (nulos, duplicados, outliers)
+- Verificación de integridad referencial
+- Visualizaciones de precios por categoría
+
+**Duración:** ~10-15 minutos
+
+### 2. `02_modelo_datos.ipynb` - Star Schema
+
+**Propósito:** Documentar y validar el modelo dimensional
+
+**Contenido:**
+- Explicación del Star Schema implementado
+- Descripción de las 4 dimensiones
+- Tabla de hechos con 20M+ observaciones
+- Validación de integridad referencial (100%)
+- Ejemplos de consultas analíticas multidimensionales
+- Benchmark de performance
+
+**Duración:** ~15-20 minutos
+
+### 3. `03_dashboard.ipynb` - Dashboard de Métricas
+
+**Propósito:** Visualizar y analizar las 6 métricas principales
+
+**Contenido:**
+- **Métrica 1:** Precio promedio - Evolución temporal
+- **Métrica 2:** Variación mensual - Histogramas y tendencias
+- **Métrica 3:** Min/Max precios - Rangos por producto
+- **Métrica 4:** Canasta básica - Comparación por supermercado
+- **Métrica 5:** Dispersión - Variabilidad de precios
+- **Métrica 6:** Ranking - Supermercados ordenados por costo
+- Análisis integrado con correlaciones
+- Dashboard consolidado (4 paneles)
+- Conclusiones y recomendaciones
+
+**Duración:** ~20-30 minutos
+
+### Cómo Ejecutar los Notebooks
+
+#### Paso 1: Ejecutar el Pipeline ETL
+
+**Prerequisito:** Los notebooks requieren que el pipeline haya generado los datos primero.
+
+```bash
+# 1. Asegurar que los CSV están en landing/
+ls -la data_sipc/landing/*.csv
+
+# 2. Iniciar servicios
+docker-compose up -d
+
+# 3. Ejecutar DAG en Airflow
+# Ir a http://localhost:8080
+# Activar y ejecutar 'monitor_precios_sipc_etl'
+
+# 4. Verificar que se generaron los datos
+ls -la data_sipc/raw/
+ls -la data_sipc/refined/
+ls -la data_sipc/exports_dashboard/
+```
+
+#### Paso 2: Acceder a Jupyter Lab
+
+```bash
+# 1. Obtener el token de acceso
+docker logs jupyter-spark 2>&1 | grep "token="
+
+# 2. Abrir en navegador
+# http://localhost:8888/?token=XXXXXXXXXX
+```
+
+#### Paso 3: Ejecutar Notebooks en Orden
+
+```
+📓 Orden recomendado:
+   01_exploracion.ipynb  →  02_modelo_datos.ipynb  →  03_dashboard.ipynb
+```
+
+**Opciones de ejecución:**
+- **Celda por celda:** `Shift + Enter`
+- **Todo el notebook:** Menu → Run → Run All Cells
+- **Hasta una celda:** Menu → Run → Run All Above Selected Cell
+
+#### Verificar Datos Antes de Ejecutar
+
+Los notebooks esperan encontrar datos en estas rutas (relativas desde `notebooks/`):
+
+```python
+# Raw zone (para 01_exploracion y 02_modelo_datos)
+'../data_sipc/raw/precios.parquet'
+'../data_sipc/raw/productos.parquet'
+'../data_sipc/raw/establecimientos.parquet'
+
+# Refined zone (para 02_modelo_datos)
+'../data_sipc/refined/dim_tiempo.parquet'
+'../data_sipc/refined/dim_producto.parquet'
+'../data_sipc/refined/dim_establecimiento.parquet'
+'../data_sipc/refined/dim_ubicacion.parquet'
+'../data_sipc/refined/fact_precios.parquet'
+
+# Exports (para 03_dashboard)
+'../data_sipc/exports_dashboard/precio_promedio.parquet'
+'../data_sipc/exports_dashboard/variacion_mensual.parquet'
+'../data_sipc/exports_dashboard/min_max_precios.parquet'
+'../data_sipc/exports_dashboard/canasta_basica.parquet'
+'../data_sipc/exports_dashboard/dispersion_precios.parquet'
+'../data_sipc/exports_dashboard/ranking_supermercados.parquet'
+```
+
+### Solución de Problemas Comunes
+
+#### Error: "FileNotFoundError"
+
+**Causa:** Pipeline ETL no ejecutado o datos incompletos
+
+**Solución:**
+```bash
+# Ejecutar pipeline completo
+docker exec airflow airflow dags trigger monitor_precios_sipc_etl
+
+# Esperar finalización (~6 minutos)
+docker exec airflow airflow dags list-runs -d monitor_precios_sipc_etl
+```
+
+#### Error: "No module named 'pyspark'"
+
+**Causa:** Ejecutando notebook fuera del contenedor
+
+**Solución:**
+- Usar Jupyter Lab dentro del contenedor: http://localhost:8888
+- No ejecutar notebooks directamente en el host
+
+#### Kernel muere o se queda sin memoria
+
+**Causa:** Datasets grandes consumiendo mucha RAM
+
+**Solución:**
+- Reiniciar kernel: Menu → Kernel → Restart Kernel
+- Ejecutar celdas en orden (no todas a la vez)
+- Aumentar memoria del contenedor en `docker-compose.yaml`:
+  ```yaml
+  jupyter:
+    deploy:
+      resources:
+        limits:
+          memory: 6G  # Aumentar de 4G a 6G
+  ```
+
+#### Visualizaciones no se renderizan
+
+**Causa:** Configuración de matplotlib
+
+**Solución:**
+```python
+# Añadir al inicio del notebook
+%matplotlib inline
+import matplotlib.pyplot as plt
+plt.rcParams['figure.figsize'] = (14, 6)
+```
+
+### Características de los Notebooks
+
+**Visualizaciones incluidas:**
+- 📈 Gráficos de líneas (evolución temporal)
+- 📊 Histogramas (distribuciones)
+- 📦 Boxplots (comparaciones estadísticas)
+- 🎯 Scatter plots (correlaciones)
+- 🏆 Gráficos de barras (rankings)
+- 📉 Dashboards multi-panel (vista consolidada)
+
+**Librerías utilizadas:**
+- `pyspark` - Procesamiento de datos
+- `pandas` - Manipulación para visualización
+- `matplotlib` - Gráficos estáticos
+- `seaborn` - Visualizaciones estadísticas mejoradas
+
+**Ventajas del enfoque:**
+- ✅ Separación de concerns: ETL en Airflow, análisis en Jupyter
+- ✅ Datos pre-procesados para análisis rápido
+- ✅ Reproducibilidad: notebooks versionados en git
+- ✅ Interactividad: exploración ad-hoc sin reejecutar pipeline
