@@ -6,6 +6,12 @@ mkdir -p /opt/airflow/logs /opt/airflow/dags /opt/airflow/plugins /opt/airflow/d
 chown -R airflow:root /opt/airflow/logs /opt/airflow/dags /opt/airflow/plugins /opt/airflow/data
 chmod -R 775 /opt/airflow/logs /opt/airflow/data
 
+# Asegurar permisos completos en data_sipc para evitar errores de Spark con directorios temporales
+if [ -d "/opt/airflow/data_sipc" ]; then
+  chmod -R 777 /opt/airflow/data_sipc
+  echo "Permisos configurados en /opt/airflow/data_sipc"
+fi
+
 # Ejecutar como usuario airflow usando runuser
 cd /opt/airflow
 runuser -u airflow -- bash -c "

@@ -79,6 +79,9 @@ class RawZoneBuilder:
         logger.info("Procesando precios de todos los años...")
         
         raw_table = str(self.paths.get_raw_table("precios"))
+        landing_file = str(self.paths.landing / "precios.csv")
+        
+        logger.info(f"Leyendo archivo: {landing_file}")
         
         df = (
             self.spark.read
@@ -129,48 +132,30 @@ class RawZoneBuilder:
         logger.info(f"✅ Precios procesados: {count} registros -> {raw_table}")
     
     def process_productos(self) -> None:
-        """Procesa archivos de productos de todos los años a formato Parquet."""
-        logger.info("Procesando productos de todos los años...")
+        """Procesa archivos de productos a formato Parquet."""
+        logger.info("Procesando productos...")
         
         raw_table = str(self.paths.get_raw_table("productos"))
+        landing_file = str(self.paths.landing / "productos.csv")
         
-        # Obtener todos los archivos de productos por año
-        producto_files = self.paths.get_landing_files_by_type("productos.csv")
+        logger.info(f"Leyendo archivo: {landing_file}")
         
-        if not producto_files:
-            logger.warning("No se encontraron archivos de productos")
-            return
+        df = (
+            self.spark.read
+            .option("header", "true")
+            .option("delimiter", ";")
+            .option("encoding", "ISO-8859-1")
+            .csv(landing_file)
+        )
         
-        logger.info(f"Años encontrados: {[year for year, _ in producto_files]}")
-        
-        # Leer todos los archivos y combinarlos
-        dfs = []
-        for year, file_path in producto_files:
-            logger.info(f"Leyendo productos_{year}.csv...")
-            df_year = (
-                self.spark.read
-                .option("header", "true")
-                .option("delimiter", ";")
-                .option("encoding", "ISO-8859-1")
-                .csv(str(file_path))
-            )
-            dfs.append(df_year)
-        
-        # Unir todos los DataFrames
-        df = dfs[0]
-        for df_next in dfs[1:]:
-            df = df.unionByName(df_next, allowMissingColumns=True)
-        
-        # Normalizar nombres de columnas
-        df_normalized = (
+        # Normalizar nombres de columnas y limpiar datos
+        df_clean = (
             df
             .withColumnRenamed("id.producto", "producto_id")
             .withColumn("categoria", F.col("producto"))  # Usar producto como categoría base
             .withColumn("subcategoria", F.col("especificacion"))
+            .dropDuplicates(["producto_id"])
         )
-        
-        # Deduplicar por producto_id (puede haber duplicados entre años)
-        df_clean = df_normalized.dropDuplicates(["producto_id"])
         
         # Limpiar directorio de salida antes de escribir
         self._clean_output_dir(raw_table)
@@ -185,48 +170,30 @@ class RawZoneBuilder:
         logger.info(f"✅ Productos procesados: {df_clean.count()} registros -> {raw_table}")
     
     def process_establecimientos(self) -> None:
-        """Procesa archivos de establecimientos de todos los años a formato Parquet."""
-        logger.info("Procesando establecimientos de todos los años...")
+        """Procesa archivos de establecimientos a formato Parquet."""
+        logger.info("Procesando establecimientos...")
         
         raw_table = str(self.paths.get_raw_table("establecimientos"))
+        landing_file = str(self.paths.landing / "establecimientos.csv")
         
-        # Obtener todos los archivos de establecimientos por año
-        establecimiento_files = self.paths.get_landing_files_by_type("establecimientos.csv")
+        logger.info(f"Leyendo archivo: {landing_file}")
         
-        if not establecimiento_files:
-            logger.warning("No se encontraron archivos de establecimientos")
-            return
+        df = (
+            self.spark.read
+            .option("header", "true")
+            .option("delimiter", ";")
+            .option("encoding", "ISO-8859-1")
+            .csv(landing_file)
+        )
         
-        logger.info(f"Años encontrados: {[year for year, _ in establecimiento_files]}")
-        
-        # Leer todos los archivos y combinarlos
-        dfs = []
-        for year, file_path in establecimiento_files:
-            logger.info(f"Leyendo establecimientos_{year}.csv...")
-            df_year = (
-                self.spark.read
-                .option("header", "true")
-                .option("delimiter", ";")
-                .option("encoding", "ISO-8859-1")
-                .csv(str(file_path))
-            )
-            dfs.append(df_year)
-        
-        # Unir todos los DataFrames
-        df = dfs[0]
-        for df_next in dfs[1:]:
-            df = df.unionByName(df_next, allowMissingColumns=True)
-        
-        # Normalizar nombres de columnas
-        df_normalized = (
+        # Normalizar nombres de columnas y deduplicar
+        df_clean = (
             df
             .withColumnRenamed("id.establecimientos", "establecimiento_id")
             .withColumnRenamed("razon.social", "razon_social")
             .withColumnRenamed("nombre.sucursal", "nombre")
+            .dropDuplicates(["establecimiento_id"])
         )
-        
-        # Deduplicar por establecimiento_id (puede haber duplicados entre años)
-        df_clean = df_normalized.dropDuplicates(["establecimiento_id"])
         
         # Limpiar directorio de salida antes de escribir
         self._clean_output_dir(raw_table)
