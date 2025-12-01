@@ -7,12 +7,12 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 
-# =========================================================================
-from src.ingestion.ingest_landing import ingest_landing_data
-from src.transform.build_raw import transform_to_raw
-from src.transform.build_dimensions import build_dimensions
-from src.transform.build_facts import build_facts
-from src.metrics.simple_metrics import calculate_simple_metrics
+# Imports desde /opt/airflow/src (configurado en PYTHONPATH)
+from ingestion.ingest_landing import ingest_landing_data
+from transform.build_raw import transform_to_raw
+from transform.build_dimensions import build_dimensions
+from transform.build_facts import build_facts
+from metrics.simple_metrics import calculate_simple_metrics
 
 
 # Configuración por defecto del DAG

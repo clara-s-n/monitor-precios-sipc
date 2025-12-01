@@ -14,8 +14,8 @@ from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
 from pyspark.sql.window import Window
 
-from src.utils.spark_session import get_spark_session, stop_spark_session
-from src.utils.paths import DataLakePaths
+from utils.spark_session import get_spark_session, stop_spark_session
+from utils.paths import DataLakePaths
 
 logger = logging.getLogger(__name__)
 

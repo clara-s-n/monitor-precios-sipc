@@ -13,7 +13,7 @@ from pathlib import Path
 from datetime import datetime
 import logging
 
-from src.utils.paths import DataLakePaths
+from utils.paths import DataLakePaths
 
 logger = logging.getLogger(__name__)
 

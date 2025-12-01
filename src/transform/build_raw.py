@@ -13,8 +13,8 @@ from pyspark.sql.types import (
 )
 from pyspark.sql import functions as F
 
-from src.utils.spark_session import get_spark_session, stop_spark_session
-from src.utils.paths import DataLakePaths
+from utils.spark_session import get_spark_session, stop_spark_session
+from utils.paths import DataLakePaths
 
 logger = logging.getLogger(__name__)
 
