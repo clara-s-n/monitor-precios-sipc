@@ -1,489 +1,446 @@
-# Monitor de Precios SIPC – Obligatorio Big Data
+# Monitor de Precios SIPC
 
-Proyecto del curso **Big Data** (UCU – Salto) que construye un **Data Lake** y un **pipeline ETL orquestado con Apache Airflow** para analizar los datos de precios del **SIPC** (Sistema de Información de Precios al Consumidor).
+**Proyecto del curso Big Data** – Universidad Católica del Uruguay (Campus Salto)
 
-## 🎯 Objetivos
+Pipeline ETL orquestado con **Apache Airflow** para analizar datos de precios del **SIPC** (Sistema de Información de Precios al Consumidor) de Uruguay. Construye un Data Lake con modelo dimensional (Star Schema) y calcula indicadores económicos clave.
 
-- Limpiar y unificar las tablas de precios, productos y establecimientos del SIPC
-- Construir un **modelo tipo estrella** (dimensiones + hechos de precios)
-- Calcular 6 métricas clave sobre evolución de precios y canasta básica
-- Exponer resultados en **dashboard Jupyter**
+---
 
-## 🧩 Métricas Implementadas
+## 📋 Tabla de Contenidos
 
-El proyecto calcula las siguientes **6 métricas principales**:
+- [Características](#-características)
+- [Arquitectura](#-arquitectura)
+- [Requisitos](#-requisitos)
+- [Instalación y Uso](#-instalación-y-uso)
+- [Pipeline ETL](#-pipeline-etl)
+- [Modelo de Datos](#-modelo-de-datos)
+- [Métricas de Negocio](#-métricas-de-negocio)
+- [Notebooks](#-notebooks)
+- [Estructura del Proyecto](#-estructura-del-proyecto)
+- [Desarrollo](#-desarrollo)
+- [Solución de Problemas](#-solución-de-problemas)
+- [Referencias](#-referencias)
 
-1. **Precio promedio por producto**  
-   Promedio del precio de un producto en un período y nivel de agregación determinado (por establecimiento, por cadena, por zona, etc.).  
-   Ejemplo: precio promedio mensual del “Arroz 1 kg” por supermercado.
+---
 
-2. **Variación porcentual diaria/mensual**  
-   Mide cuánto varió el precio con respecto al período anterior.  
-   Fórmula genérica:  
-   \[
-   \text{VarPct} = \frac{\text{Precio actual} - \text{Precio anterior}}{\text{Precio anterior}}
-   \]  
-   Se calcula tanto **día a día** como **mes a mes** para productos y/o canasta.
+## ✨ Características
 
-3. **Precio mínimo y máximo**  
-   Para cada producto y período, se calcula el **precio mínimo** y **máximo** observado entre todos los establecimientos.  
-   Permite identificar supermercados más caros/baratos para cada producto.
+- **Data Lake** con 4 zonas: Landing → Raw → Refined → Exports
+- **Star Schema** con 4 dimensiones y 1 tabla de hechos (20M+ registros)
+- **6 métricas de negocio** pre-calculadas para análisis
+- **Orquestación** automatizada con Apache Airflow
+- **Visualizaciones** interactivas en Jupyter Notebooks
+- **Dockerizado** para reproducibilidad
 
-4. **Costo de canasta básica por supermercado**  
-   Se define una **canasta básica** como conjunto de productos seleccionados.  
-   Para cada supermercado y período (por ejemplo, mes), se suma el precio de esos productos → **costo total de la canasta**.  
-   Permite comparar el “costo de llenar el carrito” entre supermercados.
+---
 
-5. **Índice de dispersión de precios**  
-   Mide cuán dispersos están los precios de un producto entre establecimientos.  
-   Fórmula propuesta:  
-   \[
-   \text{Índice de dispersión} = \frac{\text{Precio máximo} - \text{Precio mínimo}}{\text{Precio promedio}}
-   \]  
-   Valores altos indican gran diferencia de precios entre comercios.
-
-6. **Ranking de supermercados según costo total**  
-   A partir del costo de la canasta básica, se genera un ranking de supermercados (del más barato al más caro) para un período dado.  
-   Puede filtrarse por ciudad/zona, cadena, etc.
-
-Estas métricas se calculan sobre la **capa Refined** del Data Lake y se utilizan en el dashboard final.
-
-## 🏗️ Arquitectura
+## 🏗 Arquitectura
 
 ### Data Lake (filesystem local)
 
-```
+\`\`\`
 data_sipc/
-├── landing/          # CSV originales del SIPC (no versionados)
-├── raw/              # Parquet limpio y tipado (PySpark)
-├── refined/          # Modelo estrella (dimensiones + hechos)
-└── exports_dashboard/ # Datasets finales para visualización
-```
+├── landing/           # CSV originales del SIPC
+├── raw/               # Parquet limpio y tipado
+├── refined/           # Modelo estrella (dimensiones + hechos)
+└── exports_dashboard/ # Métricas para visualización
+\`\`\`
 
 ### Stack Tecnológico
 
-- **PySpark** (modo `local[*]`) – Transformaciones ETL sin cluster distribuido
-- **Apache Airflow 2.9.2** – Orquestación (SequentialExecutor + SQLite)
-- **Docker Compose** – Contenedores `airflow` y `jupyter`
-- **Parquet** – Formato de almacenamiento optimizado
+| Componente | Tecnología | Descripción |
+|------------|------------|-------------|
+| ETL | PySpark | Transformaciones en modo \`local[*]\` |
+| Orquestación | Airflow 2.9.2 | SequentialExecutor + SQLite |
+| Contenedores | Docker Compose | Servicios \`airflow\` y \`jupyter\` |
+| Almacenamiento | Parquet | Formato columnar optimizado |
 
-## 🚀 Inicio Rápido
+---
 
-### Prerequisitos
+## 📦 Requisitos
 
-- Docker y Docker Compose instalados
-- 4GB RAM disponible
+### Sistema
 
-### Levantar el entorno
+- **Docker** 20.10+
+- **Docker Compose** 2.0+
+- **RAM** 4GB mínimo (6GB recomendado)
+- **Disco** 5GB disponible
 
-```bash
-# Clonar repositorio
+### Datos
+
+Archivos CSV del SIPC (descargar de [Catálogo de Datos Abiertos](https://catalogodatos.gub.uy/)):
+- \`precios.csv\` (~20M+ registros)
+- \`productos.csv\` (~379 productos)
+- \`establecimientos.csv\` (~852 establecimientos)
+
+---
+
+## 🚀 Instalación y Uso
+
+### 1. Clonar el repositorio
+
+\`\`\`bash
 git clone https://github.com/clara-s-n/monitor-precios-sipc.git
 cd monitor-precios-sipc
+\`\`\`
 
-# Iniciar servicios
+### 2. Preparar datos de entrada
+
+Colocar los archivos CSV del SIPC en la carpeta \`data_sipc/landing/\`:
+
+\`\`\`bash
+# Estructura esperada
+data_sipc/landing/
+├── precios.csv
+├── productos.csv
+└── establecimientos.csv
+\`\`\`
+
+### 3. Iniciar los servicios
+
+\`\`\`bash
 docker-compose up -d
+\`\`\`
 
-# Verificar estado
+### 4. Verificar estado
+
+\`\`\`bash
 docker-compose ps
-```
+\`\`\`
 
-### Acceso a interfaces
+Servicios disponibles:
 
-| Servicio    | URL                   | Credenciales      |
-| ----------- | --------------------- | ----------------- |
-| Airflow UI  | http://localhost:8080 | Sin autenticación |
-| Jupyter Lab | http://localhost:8888 | Token en logs     |
+| Servicio | URL | Descripción |
+|----------|-----|-------------|
+| Airflow UI | http://localhost:8080 | Interfaz de orquestación |
+| Jupyter Lab | http://localhost:8888 | Notebooks de análisis |
 
-```bash
-# Obtener token de Jupyter
-docker logs jupyter-spark | grep "token="
-```
+### 5. Ejecutar el pipeline ETL
 
-### Ejecutar pipeline ETL
+1. Abrir **Airflow UI** en http://localhost:8080
+2. Localizar el DAG \`monitor_precios_sipc_etl\`
+3. Activar el toggle (ON)
+4. Hacer clic en ▶️ **Trigger DAG**
 
-1. Colocar archivos CSV del SIPC en `data_sipc/landing/`:
+⏱️ **Tiempo de ejecución:** ~6 minutos
 
-   - `precios.csv`
-   - `productos.csv`
-   - `establecimientos.csv`
+### 6. Verificar resultados
 
-2. En Airflow UI (http://localhost:8080), activar DAG `monitor_precios_sipc_etl`
+\`\`\`bash
+# Verificar datos generados
+ls -la data_sipc/raw/
+ls -la data_sipc/refined/
+ls -la data_sipc/exports_dashboard/
+\`\`\`
 
-3. Monitorear ejecución en el panel de tareas
+### 7. Explorar notebooks
 
-## 📂 Estructura del Proyecto
+1. Obtener token de Jupyter:
+   \`\`\`bash
+   docker logs jupyter-spark 2>&1 | grep "token="
+   \`\`\`
+2. Abrir http://localhost:8888 con el token
+3. Navegar a \`notebooks/\` y ejecutar en orden
 
-```
-monitor-precios-sipc/
-├── airflow/
-│   ├── Dockerfile              # Imagen custom con PySpark
-│   ├── dags/
-│   │   └── monitor_precios_dag.py  # ✅ Orquestación ETL principal
-│   └── logs/                   # Logs de ejecución
-│
-├── src/                        # Lógica de negocio (montado en containers)
-│   ├── ingestion/
-│   │   └── ingest_landing.py   # ✅ Validación y copia de CSVs
-│   ├── transform/
-│   │   ├── build_raw.py        # ✅ Landing → Raw (Parquet)
-│   │   ├── build_dimensions.py # Construcción de dimensiones
-│   │   └── build_facts.py      # Tabla de hechos
-│   ├── metrics/                # Cálculo de KPIs
-│   └── utils/
-│       ├── spark_session.py    # ✅ Factory de sesiones Spark
-│       └── paths.py            # ✅ Gestión de rutas del data lake
-│
-├── notebooks/
-│   ├── 01_exploracion.ipynb    # Análisis exploratorio
-│   ├── 02_modelo_datos.ipynb   # Diseño star schema
-│   └── 03_dashboard.ipynb      # Visualizaciones finales
-│
-├── data_sipc/                  # Data Lake (gitignored)
-└── docker-compose.yaml
-```
+### 8. Detener servicios
 
-✅ = Implementado | 🔲 = Pendiente
+\`\`\`bash
+docker-compose down
+\`\`\`
 
-## 📊 Pipeline ETL
+---
+
+## 🔄 Pipeline ETL
 
 ### Flujo de datos
 
-```
+\`\`\`
 📥 Landing Zone (CSV)
-    ↓ ingest_landing.py (validación + copia)
+    ↓ ingest_landing.py
 
-🧹 Raw Zone (Parquet limpio)
-    ↓ build_raw.py (limpieza + tipado)
+🧹 Raw Zone (Parquet)
+    ↓ build_raw.py
 
 📐 Refined Zone (Star Schema)
-    ↓ build_dimensions.py
-    │   → dim_tiempo, dim_producto, dim_establecimiento, dim_ubicacion
-    ↓ build_facts.py
-    │   → fact_precios
+    ↓ build_dimensions.py → dim_tiempo, dim_producto, 
+    │                       dim_establecimiento, dim_ubicacion
+    ↓ build_facts.py → fact_precios
 
-📈 Exports Dashboard
-    ↓ metrics/* (KPIs)
-    │   → precio_promedio, dispersion_index, canasta_basica, ranking
-```
+📊 Exports Dashboard
+    ↓ simple_metrics.py → 6 métricas pre-calculadas
+\`\`\`
 
-### Modelo de Datos (Star Schema)
+### Tareas del DAG
 
-**Dimensiones:**
+| Tarea | Descripción | Duración aprox. |
+|-------|-------------|-----------------|
+| \`ingest_landing\` | Validar y copiar CSVs | 30s |
+| \`build_raw\` | Limpiar y tipar datos | 2min |
+| \`build_dimensions\` | Crear 4 dimensiones | 1min |
+| \`build_facts\` | Crear tabla de hechos | 2min |
+| \`calculate_metrics\` | Calcular 6 métricas | 30s |
 
-- `dim_tiempo`: fecha, año, mes, día, trimestre
-- `dim_producto`: producto_id, nombre, categoría, subcategoría, marca
-- `dim_establecimiento`: establecimiento_id, nombre, cadena
-- `dim_ubicacion`: ubicacion_id, departamento, ciudad, dirección
+---
 
-**Hechos:**
+## 📐 Modelo de Datos
 
-- `fact_precios`: precio, fecha_id, producto_id, establecimiento_id, ubicacion_id, unidad
+### Star Schema
+
+\`\`\`
+                    ┌─────────────────┐
+                    │   dim_tiempo    │
+                    │─────────────────│
+                    │ fecha_id (PK)   │
+                    │ fecha, anio     │
+                    │ mes, dia        │
+                    │ trimestre       │
+                    └────────┬────────┘
+                             │
+┌─────────────────┐          │          ┌─────────────────────┐
+│  dim_producto   │          │          │ dim_establecimiento │
+│─────────────────│          │          │─────────────────────│
+│ producto_id(PK) │          │          │ establec_id (PK)    │
+│ nombre, marca   │          │          │ nombre, cadena      │
+│ categoria       │          │          │ razon_social        │
+└────────┬────────┘          │          └──────────┬──────────┘
+         │                   │                     │
+         │         ┌─────────┴─────────┐           │
+         │         │   fact_precios    │           │
+         └─────────┤───────────────────├───────────┘
+                   │ fecha_id (FK)     │
+                   │ producto_id (FK)  │
+                   │ establec_id (FK)  │
+                   │ ubicacion_id (FK) │
+                   │ precio, oferta    │
+                   └─────────┬─────────┘
+                             │
+                    ┌────────┴────────┐
+                    │  dim_ubicacion  │
+                    │─────────────────│
+                    │ ubicacion_id(PK)│
+                    │ departamento    │
+                    │ ciudad, barrio  │
+                    └─────────────────┘
+\`\`\`
+
+### Estadísticas del modelo
+
+| Tabla | Registros | Descripción |
+|-------|-----------|-------------|
+| \`dim_tiempo\` | ~365 | Atributos temporales |
+| \`dim_producto\` | 379 | Catálogo de productos |
+| \`dim_establecimiento\` | 852 | Puntos de venta |
+| \`dim_ubicacion\` | 852 | Información geográfica |
+| \`fact_precios\` | 20M+ | Observaciones de precios |
+
+---
+
+## 📊 Métricas de Negocio
+
+El proyecto calcula **6 métricas principales**:
+
+### 1. Precio Promedio por Producto
+Promedio del precio agrupado por producto, año y mes.
+
+### 2. Variación Porcentual Mensual
+Cambio porcentual del precio respecto al mes anterior:
+
+$$\text{Variación} = \frac{\text{Precio actual} - \text{Precio anterior}}{\text{Precio anterior}} \times 100$$
+
+### 3. Precio Mínimo y Máximo
+Rango de precios por producto y período.
+
+### 4. Costo de Canasta Básica
+Suma del costo de 62 productos de la canasta CBAEN 2024 por supermercado.
+
+### 5. Índice de Dispersión
+Variabilidad de precios entre establecimientos:
+
+$$\text{Dispersión} = \frac{\text{Precio máx} - \text{Precio mín}}{\text{Precio promedio}}$$
+
+### 6. Ranking de Supermercados
+Ordenamiento por costo total de canasta básica.
+
+### Archivos de salida
+
+\`\`\`
+data_sipc/exports_dashboard/
+├── precio_promedio.parquet
+├── variacion_mensual.parquet
+├── min_max_precios.parquet
+├── canasta_basica.parquet
+├── dispersion_precios.parquet
+└── ranking_supermercados.parquet
+\`\`\`
+
+---
+
+## 📓 Notebooks
+
+El proyecto incluye 3 notebooks interactivos:
+
+| Notebook | Descripción | Duración |
+|----------|-------------|----------|
+| \`01_exploracion.ipynb\` | Análisis exploratorio de datos raw | 10-15 min |
+| \`02_modelo_datos.ipynb\` | Documentación del Star Schema | 15-20 min |
+| \`03_dashboard.ipynb\` | Dashboard con 6 métricas y visualizaciones | 20-30 min |
+
+### Orden de ejecución
+
+\`\`\`
+01_exploracion → 02_modelo_datos → 03_dashboard
+\`\`\`
+
+### Prerequisito
+
+Los notebooks requieren que el pipeline ETL haya sido ejecutado previamente.
+
+Ver documentación detallada en [\`notebooks/README.md\`](notebooks/README.md).
+
+---
+
+## 📂 Estructura del Proyecto
+
+\`\`\`
+monitor-precios-sipc/
+├── README.md                 # Este archivo
+├── docker-compose.yaml       # Configuración de servicios
+├── requirements.txt          # Dependencias Python
+│
+├── airflow/
+│   ├── Dockerfile            # Imagen custom con PySpark
+│   ├── entrypoint.sh
+│   ├── dags/
+│   │   └── monitor_precios_dag.py  # DAG principal
+│   └── logs/
+│
+├── src/                      # Código fuente
+│   ├── ingestion/
+│   │   └── ingest_landing.py
+│   ├── transform/
+│   │   ├── build_raw.py
+│   │   ├── build_dimensions.py
+│   │   └── build_facts.py
+│   ├── metrics/
+│   │   └── simple_metrics.py
+│   └── utils/
+│       ├── spark_session.py
+│       └── paths.py
+│
+├── notebooks/
+│   ├── README.md
+│   ├── 01_exploracion.ipynb
+│   ├── 02_modelo_datos.ipynb
+│   └── 03_dashboard.ipynb
+│
+├── docs/
+│   ├── canasta_basica_cbaen_2024.md
+│   └── metadata/
+│
+└── data_sipc/                # Data Lake (no versionado)
+    ├── landing/
+    ├── raw/
+    ├── refined/
+    └── exports_dashboard/
+\`\`\`
+
+---
 
 ## 🔧 Desarrollo
 
-### Estructura del código ETL
+### Modificar transformaciones
 
-El pipeline ETL está organizado en módulos reutilizables en `src/`:
+Los módulos en \`src/\` están montados como volumen, los cambios se reflejan inmediatamente:
 
-**Ingesta (`src/ingestion/`):**
-- `ingest_landing.py`: Valida y copia archivos CSV a la landing zone
-  - Verifica estructura de columnas esperadas
-  - Maneja encoding ISO-8859-1 y delimitador `;`
-  - Genera metadata de ingesta
-
-**Transformaciones (`src/transform/`):**
-- `build_raw.py`: Procesa CSVs a Parquet con limpieza y tipado
-  - Convierte fechas, normaliza columnas
-  - Filtra registros inválidos
-  - Particiona por fecha para optimizar consultas
-
-- `build_dimensions.py`: Construye las 4 dimensiones del modelo estrella
-  - `dim_tiempo`: Atributos temporales derivados de fechas
-  - `dim_producto`: Catálogo completo de productos
-  - `dim_establecimiento`: Información de comercios
-  - `dim_ubicacion`: Datos geográficos
-
-- `build_facts.py`: Crea tabla de hechos con claves foráneas
-  - Joins con todas las dimensiones
-  - Mantiene medidas (precio, unidad)
-  - Particionado por fecha
-
-**Métricas (`src/metrics/`):**
-- `simple_metrics.py`: Calcula las 6 métricas de negocio
-  1. Precio promedio por producto y período
-  2. Precios mínimos y máximos
-  3. Índice de dispersión de precios
-  4. Costo de canasta básica por supermercado
-  5. Ranking de supermercados por costo
-  6. Variación porcentual mensual
-
-**Utilidades (`src/utils/`):**
-- `spark_session.py`: Factory de sesiones Spark (modo local)
-- `paths.py`: Gestión centralizada de rutas del Data Lake
-
-### Editar transformaciones ETL
-
-Los módulos en `src/` están montados como volumen en el contenedor de Airflow, por lo que los cambios se reflejan inmediatamente sin necesidad de reconstruir la imagen.
-
-```bash
-# Editar archivo
+\`\`\`bash
+# Editar transformación
 vim src/transform/build_dimensions.py
 
-# Probar localmente con PySpark
-cd /ruta/proyecto
-python -c "from src.transform.build_dimensions import build_dimensions; build_dimensions()"
+# Ejecutar DAG para probar cambios
+# (desde Airflow UI o línea de comandos)
+\`\`\`
 
-# O ejecutar desde Airflow UI
-# (activa manualmente el DAG monitor_precios_sipc_etl)
-```
+### Comandos útiles
 
-### Ejecutar pipeline completo
+\`\`\`bash
+# Ver logs de Airflow
+docker logs airflow --tail 100
 
-```bash
-# Asegurar que los CSV están en landing/
-ls -la data_sipc/landing/*.csv
+# Acceder al contenedor
+docker exec -it airflow bash
 
-# Desde Airflow UI:
-# 1. Ir a http://localhost:8080
-# 2. Buscar DAG 'monitor_precios_sipc_etl'
-# 3. Activar toggle a ON
-# 4. Trigger DAG manualmente con botón ▶️
-
-# Verificar outputs
-ls -la data_sipc/raw/
-ls -la data_sipc/refined/
-ls -la data_sipc/exports_dashboard/
-```
-
-### Estructura de datos generada
-
-**Raw zone** (`data_sipc/raw/`):
-- `precios/`: Precios limpios particionados por fecha
-- `productos/`: Catálogo de productos
-- `establecimientos/`: Información de comercios
-
-**Refined zone** (`data_sipc/refined/`):
-- `dim_tiempo/`: Dimensión temporal
-- `dim_producto/`: Dimensión de productos
-- `dim_establecimiento/`: Dimensión de establecimientos
-- `dim_ubicacion/`: Dimensión geográfica
-- `fact_precios/`: Tabla de hechos (particionada por fecha)
-
-**Exports** (`data_sipc/exports_dashboard/`):
-- `precio_promedio.parquet`
-- `min_max_precios.parquet`
-- `dispersion_precios.parquet`
-- `canasta_basica.parquet`
-- `ranking_supermercados.parquet`
-- `variacion_mensual.parquet`
-
-### Leer resultados en notebooks
-
-Ver la **guía completa de notebooks** en [`notebooks/README.md`](notebooks/README.md).
-
-```python
-from pyspark.sql import SparkSession
-
-spark = SparkSession.builder.appName("Dashboard").getOrCreate()
-
-# Leer métricas
-precio_prom = spark.read.parquet("../data_sipc/exports_dashboard/precio_promedio.parquet")
-precio_prom.show()
-
-# Análisis con Pandas
-df_pandas = precio_prom.toPandas()
-```
-
-## 📓 Jupyter Notebooks
-
-El proyecto incluye 3 notebooks interactivos para análisis y visualización:
-
-### 1. `01_exploracion.ipynb` - Análisis Exploratorio
-
-**Propósito:** Entender la estructura y calidad de los datos raw
-
-**Contenido:**
-- Carga de datos desde zona RAW (Parquet)
-- Estadísticas descriptivas (20M+ registros de precios)
-- Distribuciones temporales y geográficas
-- Análisis de calidad (nulos, duplicados, outliers)
-- Verificación de integridad referencial
-- Visualizaciones de precios por categoría
-
-**Duración:** ~10-15 minutos
-
-### 2. `02_modelo_datos.ipynb` - Star Schema
-
-**Propósito:** Documentar y validar el modelo dimensional
-
-**Contenido:**
-- Explicación del Star Schema implementado
-- Descripción de las 4 dimensiones
-- Tabla de hechos con 20M+ observaciones
-- Validación de integridad referencial (100%)
-- Ejemplos de consultas analíticas multidimensionales
-- Benchmark de performance
-
-**Duración:** ~15-20 minutos
-
-### 3. `03_dashboard.ipynb` - Dashboard de Métricas
-
-**Propósito:** Visualizar y analizar las 6 métricas principales
-
-**Contenido:**
-- **Métrica 1:** Precio promedio - Evolución temporal
-- **Métrica 2:** Variación mensual - Histogramas y tendencias
-- **Métrica 3:** Min/Max precios - Rangos por producto
-- **Métrica 4:** Canasta básica - Comparación por supermercado
-- **Métrica 5:** Dispersión - Variabilidad de precios
-- **Métrica 6:** Ranking - Supermercados ordenados por costo
-- Análisis integrado con correlaciones
-- Dashboard consolidado (4 paneles)
-- Conclusiones y recomendaciones
-
-**Duración:** ~20-30 minutos
-
-### Cómo Ejecutar los Notebooks
-
-#### Paso 1: Ejecutar el Pipeline ETL
-
-**Prerequisito:** Los notebooks requieren que el pipeline haya generado los datos primero.
-
-```bash
-# 1. Asegurar que los CSV están en landing/
-ls -la data_sipc/landing/*.csv
-
-# 2. Iniciar servicios
-docker-compose up -d
-
-# 3. Ejecutar DAG en Airflow
-# Ir a http://localhost:8080
-# Activar y ejecutar 'monitor_precios_sipc_etl'
-
-# 4. Verificar que se generaron los datos
-ls -la data_sipc/raw/
-ls -la data_sipc/refined/
-ls -la data_sipc/exports_dashboard/
-```
-
-#### Paso 2: Acceder a Jupyter Lab
-
-```bash
-# 1. Obtener el token de acceso
-docker logs jupyter-spark 2>&1 | grep "token="
-
-# 2. Abrir en navegador
-# http://localhost:8888/?token=XXXXXXXXXX
-```
-
-#### Paso 3: Ejecutar Notebooks en Orden
-
-```
-📓 Orden recomendado:
-   01_exploracion.ipynb  →  02_modelo_datos.ipynb  →  03_dashboard.ipynb
-```
-
-**Opciones de ejecución:**
-- **Celda por celda:** `Shift + Enter`
-- **Todo el notebook:** Menu → Run → Run All Cells
-- **Hasta una celda:** Menu → Run → Run All Above Selected Cell
-
-#### Verificar Datos Antes de Ejecutar
-
-Los notebooks esperan encontrar datos en estas rutas (relativas desde `notebooks/`):
-
-```python
-# Raw zone (para 01_exploracion y 02_modelo_datos)
-'../data_sipc/raw/precios.parquet'
-'../data_sipc/raw/productos.parquet'
-'../data_sipc/raw/establecimientos.parquet'
-
-# Refined zone (para 02_modelo_datos)
-'../data_sipc/refined/dim_tiempo.parquet'
-'../data_sipc/refined/dim_producto.parquet'
-'../data_sipc/refined/dim_establecimiento.parquet'
-'../data_sipc/refined/dim_ubicacion.parquet'
-'../data_sipc/refined/fact_precios.parquet'
-
-# Exports (para 03_dashboard)
-'../data_sipc/exports_dashboard/precio_promedio.parquet'
-'../data_sipc/exports_dashboard/variacion_mensual.parquet'
-'../data_sipc/exports_dashboard/min_max_precios.parquet'
-'../data_sipc/exports_dashboard/canasta_basica.parquet'
-'../data_sipc/exports_dashboard/dispersion_precios.parquet'
-'../data_sipc/exports_dashboard/ranking_supermercados.parquet'
-```
-
-### Solución de Problemas Comunes
-
-#### Error: "FileNotFoundError"
-
-**Causa:** Pipeline ETL no ejecutado o datos incompletos
-
-**Solución:**
-```bash
-# Ejecutar pipeline completo
+# Ejecutar DAG manualmente
 docker exec airflow airflow dags trigger monitor_precios_sipc_etl
 
-# Esperar finalización (~6 minutos)
+# Ver estado de ejecuciones
 docker exec airflow airflow dags list-runs -d monitor_precios_sipc_etl
-```
 
-#### Error: "No module named 'pyspark'"
+# Limpiar datos (reiniciar pipeline)
+docker exec airflow rm -rf /opt/airflow/data_sipc/raw/* \\
+    /opt/airflow/data_sipc/refined/* \\
+    /opt/airflow/data_sipc/exports_dashboard/*
+\`\`\`
 
-**Causa:** Ejecutando notebook fuera del contenedor
+---
 
-**Solución:**
-- Usar Jupyter Lab dentro del contenedor: http://localhost:8888
-- No ejecutar notebooks directamente en el host
+## 🔍 Solución de Problemas
 
-#### Kernel muere o se queda sin memoria
+### Pipeline falla con "Permission denied"
 
-**Causa:** Datasets grandes consumiendo mucha RAM
+\`\`\`bash
+# Corregir permisos del volumen
+docker exec airflow chmod -R 777 /opt/airflow/data_sipc/
+\`\`\`
 
-**Solución:**
-- Reiniciar kernel: Menu → Kernel → Restart Kernel
-- Ejecutar celdas en orden (no todas a la vez)
-- Aumentar memoria del contenedor en `docker-compose.yaml`:
-  ```yaml
-  jupyter:
-    deploy:
-      resources:
-        limits:
-          memory: 6G  # Aumentar de 4G a 6G
-  ```
+### Notebook muestra "FileNotFoundError"
 
-#### Visualizaciones no se renderizan
+**Causa:** Pipeline ETL no ejecutado.
 
-**Causa:** Configuración de matplotlib
+\`\`\`bash
+# Ejecutar pipeline
+docker exec airflow airflow dags trigger monitor_precios_sipc_etl
 
-**Solución:**
-```python
-# Añadir al inicio del notebook
-%matplotlib inline
-import matplotlib.pyplot as plt
-plt.rcParams['figure.figsize'] = (14, 6)
-```
+# Esperar ~6 minutos y verificar
+ls -la data_sipc/exports_dashboard/
+\`\`\`
 
-### Características de los Notebooks
+### Kernel de Jupyter muere
 
-**Visualizaciones incluidas:**
-- 📈 Gráficos de líneas (evolución temporal)
-- 📊 Histogramas (distribuciones)
-- 📦 Boxplots (comparaciones estadísticas)
-- 🎯 Scatter plots (correlaciones)
-- 🏆 Gráficos de barras (rankings)
-- 📉 Dashboards multi-panel (vista consolidada)
+**Causa:** Memoria insuficiente.
 
-**Librerías utilizadas:**
-- `pyspark` - Procesamiento de datos
-- `pandas` - Manipulación para visualización
-- `matplotlib` - Gráficos estáticos
-- `seaborn` - Visualizaciones estadísticas mejoradas
+**Solución:** Aumentar memoria en \`docker-compose.yaml\`:
+\`\`\`yaml
+jupyter:
+  deploy:
+    resources:
+      limits:
+        memory: 6G
+\`\`\`
 
-**Ventajas del enfoque:**
-- ✅ Separación de concerns: ETL en Airflow, análisis en Jupyter
-- ✅ Datos pre-procesados para análisis rápido
-- ✅ Reproducibilidad: notebooks versionados en git
-- ✅ Interactividad: exploración ad-hoc sin reejecutar pipeline
+### Token de Jupyter no funciona
+
+\`\`\`bash
+# Obtener nuevo token
+docker logs jupyter-spark 2>&1 | grep "token="
+\`\`\`
+
+---
+
+## 📚 Referencias
+
+- **Datos:** [SIPC - Catálogo de Datos Abiertos Uruguay](https://catalogodatos.gub.uy/)
+- **Canasta básica:** Informe CBAEN 2024 - Instituto Nacional de Estadística (INE)
+- **Metodología:** [Kimball Dimensional Modeling](https://www.kimballgroup.com/)
+- **PySpark:** [Apache Spark SQL Guide](https://spark.apache.org/docs/latest/sql-programming-guide.html)
+
+---
+
+## 👥 Autores
+
+Proyecto desarrollado para el curso **Big Data** – UCU Campus Salto, Diciembre 2024.
+
+---
+
+## 📄 Licencia
+
+Este proyecto es de uso académico.
