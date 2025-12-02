@@ -38,21 +38,21 @@ Pipeline ETL orquestado con **Apache Airflow** para analizar datos de precios de
 
 ### Data Lake (filesystem local)
 
-\`\`\`
+```
 data_sipc/
 ├── landing/           # CSV originales del SIPC
 ├── raw/               # Parquet limpio y tipado
 ├── refined/           # Modelo estrella (dimensiones + hechos)
 └── exports_dashboard/ # Métricas para visualización
-\`\`\`
+```
 
 ### Stack Tecnológico
 
 | Componente | Tecnología | Descripción |
 |------------|------------|-------------|
-| ETL | PySpark | Transformaciones en modo \`local[*]\` |
+| ETL | PySpark | Transformaciones en modo `local[*]` |
 | Orquestación | Airflow 2.9.2 | SequentialExecutor + SQLite |
-| Contenedores | Docker Compose | Servicios \`airflow\` y \`jupyter\` |
+| Contenedores | Docker Compose | Servicios `airflow` y `jupyter` |
 | Almacenamiento | Parquet | Formato columnar optimizado |
 
 ---
@@ -69,9 +69,9 @@ data_sipc/
 ### Datos
 
 Archivos CSV del SIPC (descargar de [Catálogo de Datos Abiertos](https://catalogodatos.gub.uy/)):
-- \`precios.csv\` (~20M+ registros)
-- \`productos.csv\` (~379 productos)
-- \`establecimientos.csv\` (~852 establecimientos)
+- `precios.csv` (~20M+ registros)
+- `productos.csv` (~379 productos)
+- `establecimientos.csv` (~852 establecimientos)
 
 ---
 
@@ -79,34 +79,33 @@ Archivos CSV del SIPC (descargar de [Catálogo de Datos Abiertos](https://catalo
 
 ### 1. Clonar el repositorio
 
-\`\`\`bash
+```bash
 git clone https://github.com/clara-s-n/monitor-precios-sipc.git
 cd monitor-precios-sipc
-\`\`\`
+```
 
 ### 2. Preparar datos de entrada
 
-Colocar los archivos CSV del SIPC en la carpeta \`data_sipc/landing/\`:
+Colocar los archivos CSV del SIPC en la carpeta `data_sipc/landing/`:
 
-\`\`\`bash
-# Estructura esperada
+```
 data_sipc/landing/
 ├── precios.csv
 ├── productos.csv
 └── establecimientos.csv
-\`\`\`
+```
 
 ### 3. Iniciar los servicios
 
-\`\`\`bash
+```bash
 docker-compose up -d
-\`\`\`
+```
 
 ### 4. Verificar estado
 
-\`\`\`bash
+```bash
 docker-compose ps
-\`\`\`
+```
 
 Servicios disponibles:
 
@@ -118,7 +117,7 @@ Servicios disponibles:
 ### 5. Ejecutar el pipeline ETL
 
 1. Abrir **Airflow UI** en http://localhost:8080
-2. Localizar el DAG \`monitor_precios_sipc_etl\`
+2. Localizar el DAG `monitor_precios_sipc_etl`
 3. Activar el toggle (ON)
 4. Hacer clic en ▶️ **Trigger DAG**
 
@@ -126,27 +125,27 @@ Servicios disponibles:
 
 ### 6. Verificar resultados
 
-\`\`\`bash
+```bash
 # Verificar datos generados
 ls -la data_sipc/raw/
 ls -la data_sipc/refined/
 ls -la data_sipc/exports_dashboard/
-\`\`\`
+```
 
 ### 7. Explorar notebooks
 
 1. Obtener token de Jupyter:
-   \`\`\`bash
+   ```bash
    docker logs jupyter-spark 2>&1 | grep "token="
-   \`\`\`
+   ```
 2. Abrir http://localhost:8888 con el token
-3. Navegar a \`notebooks/\` y ejecutar en orden
+3. Navegar a `notebooks/` y ejecutar en orden
 
 ### 8. Detener servicios
 
-\`\`\`bash
+```bash
 docker-compose down
-\`\`\`
+```
 
 ---
 
@@ -154,7 +153,7 @@ docker-compose down
 
 ### Flujo de datos
 
-\`\`\`
+```
 📥 Landing Zone (CSV)
     ↓ ingest_landing.py
 
@@ -168,17 +167,17 @@ docker-compose down
 
 📊 Exports Dashboard
     ↓ simple_metrics.py → 6 métricas pre-calculadas
-\`\`\`
+```
 
 ### Tareas del DAG
 
 | Tarea | Descripción | Duración aprox. |
 |-------|-------------|-----------------|
-| \`ingest_landing\` | Validar y copiar CSVs | 30s |
-| \`build_raw\` | Limpiar y tipar datos | 2min |
-| \`build_dimensions\` | Crear 4 dimensiones | 1min |
-| \`build_facts\` | Crear tabla de hechos | 2min |
-| \`calculate_metrics\` | Calcular 6 métricas | 30s |
+| `ingest_landing` | Validar y copiar CSVs | 30s |
+| `build_raw` | Limpiar y tipar datos | 2min |
+| `build_dimensions` | Crear 4 dimensiones | 1min |
+| `build_facts` | Crear tabla de hechos | 2min |
+| `calculate_metrics` | Calcular 6 métricas | 30s |
 
 ---
 
@@ -186,7 +185,7 @@ docker-compose down
 
 ### Star Schema
 
-\`\`\`
+```
                     ┌─────────────────┐
                     │   dim_tiempo    │
                     │─────────────────│
@@ -221,17 +220,17 @@ docker-compose down
                     │ departamento    │
                     │ ciudad, barrio  │
                     └─────────────────┘
-\`\`\`
+```
 
 ### Estadísticas del modelo
 
 | Tabla | Registros | Descripción |
 |-------|-----------|-------------|
-| \`dim_tiempo\` | ~365 | Atributos temporales |
-| \`dim_producto\` | 379 | Catálogo de productos |
-| \`dim_establecimiento\` | 852 | Puntos de venta |
-| \`dim_ubicacion\` | 852 | Información geográfica |
-| \`fact_precios\` | 20M+ | Observaciones de precios |
+| `dim_tiempo` | ~365 | Atributos temporales |
+| `dim_producto` | 379 | Catálogo de productos |
+| `dim_establecimiento` | 852 | Puntos de venta |
+| `dim_ubicacion` | 852 | Información geográfica |
+| `fact_precios` | 20M+ | Observaciones de precios |
 
 ---
 
@@ -245,7 +244,9 @@ Promedio del precio agrupado por producto, año y mes.
 ### 2. Variación Porcentual Mensual
 Cambio porcentual del precio respecto al mes anterior:
 
-$$\text{Variación} = \frac{\text{Precio actual} - \text{Precio anterior}}{\text{Precio anterior}} \times 100$$
+```
+Variación = (Precio actual - Precio anterior) / Precio anterior × 100
+```
 
 ### 3. Precio Mínimo y Máximo
 Rango de precios por producto y período.
@@ -256,14 +257,16 @@ Suma del costo de 62 productos de la canasta CBAEN 2024 por supermercado.
 ### 5. Índice de Dispersión
 Variabilidad de precios entre establecimientos:
 
-$$\text{Dispersión} = \frac{\text{Precio máx} - \text{Precio mín}}{\text{Precio promedio}}$$
+```
+Dispersión = (Precio máx - Precio mín) / Precio promedio
+```
 
 ### 6. Ranking de Supermercados
 Ordenamiento por costo total de canasta básica.
 
 ### Archivos de salida
 
-\`\`\`
+```
 data_sipc/exports_dashboard/
 ├── precio_promedio.parquet
 ├── variacion_mensual.parquet
@@ -271,7 +274,7 @@ data_sipc/exports_dashboard/
 ├── canasta_basica.parquet
 ├── dispersion_precios.parquet
 └── ranking_supermercados.parquet
-\`\`\`
+```
 
 ---
 
@@ -281,27 +284,27 @@ El proyecto incluye 3 notebooks interactivos:
 
 | Notebook | Descripción | Duración |
 |----------|-------------|----------|
-| \`01_exploracion.ipynb\` | Análisis exploratorio de datos raw | 10-15 min |
-| \`02_modelo_datos.ipynb\` | Documentación del Star Schema | 15-20 min |
-| \`03_dashboard.ipynb\` | Dashboard con 6 métricas y visualizaciones | 20-30 min |
+| `01_exploracion.ipynb` | Análisis exploratorio de datos raw | 10-15 min |
+| `02_modelo_datos.ipynb` | Documentación del Star Schema | 15-20 min |
+| `03_dashboard.ipynb` | Dashboard con 6 métricas y visualizaciones | 20-30 min |
 
 ### Orden de ejecución
 
-\`\`\`
+```
 01_exploracion → 02_modelo_datos → 03_dashboard
-\`\`\`
+```
 
 ### Prerequisito
 
 Los notebooks requieren que el pipeline ETL haya sido ejecutado previamente.
 
-Ver documentación detallada en [\`notebooks/README.md\`](notebooks/README.md).
+Ver documentación detallada en [`notebooks/README.md`](notebooks/README.md).
 
 ---
 
 ## 📂 Estructura del Proyecto
 
-\`\`\`
+```
 monitor-precios-sipc/
 ├── README.md                 # Este archivo
 ├── docker-compose.yaml       # Configuración de servicios
@@ -342,7 +345,7 @@ monitor-precios-sipc/
     ├── raw/
     ├── refined/
     └── exports_dashboard/
-\`\`\`
+```
 
 ---
 
@@ -350,19 +353,19 @@ monitor-precios-sipc/
 
 ### Modificar transformaciones
 
-Los módulos en \`src/\` están montados como volumen, los cambios se reflejan inmediatamente:
+Los módulos en `src/` están montados como volumen, los cambios se reflejan inmediatamente:
 
-\`\`\`bash
+```bash
 # Editar transformación
 vim src/transform/build_dimensions.py
 
 # Ejecutar DAG para probar cambios
 # (desde Airflow UI o línea de comandos)
-\`\`\`
+```
 
 ### Comandos útiles
 
-\`\`\`bash
+```bash
 # Ver logs de Airflow
 docker logs airflow --tail 100
 
@@ -376,10 +379,10 @@ docker exec airflow airflow dags trigger monitor_precios_sipc_etl
 docker exec airflow airflow dags list-runs -d monitor_precios_sipc_etl
 
 # Limpiar datos (reiniciar pipeline)
-docker exec airflow rm -rf /opt/airflow/data_sipc/raw/* \\
-    /opt/airflow/data_sipc/refined/* \\
+docker exec airflow rm -rf /opt/airflow/data_sipc/raw/* \
+    /opt/airflow/data_sipc/refined/* \
     /opt/airflow/data_sipc/exports_dashboard/*
-\`\`\`
+```
 
 ---
 
@@ -387,42 +390,43 @@ docker exec airflow rm -rf /opt/airflow/data_sipc/raw/* \\
 
 ### Pipeline falla con "Permission denied"
 
-\`\`\`bash
+```bash
 # Corregir permisos del volumen
 docker exec airflow chmod -R 777 /opt/airflow/data_sipc/
-\`\`\`
+```
 
 ### Notebook muestra "FileNotFoundError"
 
 **Causa:** Pipeline ETL no ejecutado.
 
-\`\`\`bash
+```bash
 # Ejecutar pipeline
 docker exec airflow airflow dags trigger monitor_precios_sipc_etl
 
 # Esperar ~6 minutos y verificar
 ls -la data_sipc/exports_dashboard/
-\`\`\`
+```
 
 ### Kernel de Jupyter muere
 
 **Causa:** Memoria insuficiente.
 
-**Solución:** Aumentar memoria en \`docker-compose.yaml\`:
-\`\`\`yaml
+**Solución:** Aumentar memoria en `docker-compose.yaml`:
+
+```yaml
 jupyter:
   deploy:
     resources:
       limits:
         memory: 6G
-\`\`\`
+```
 
 ### Token de Jupyter no funciona
 
-\`\`\`bash
+```bash
 # Obtener nuevo token
 docker logs jupyter-spark 2>&1 | grep "token="
-\`\`\`
+```
 
 ---
 
