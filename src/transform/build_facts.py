@@ -100,6 +100,7 @@ class FactBuilder:
                 "establecimiento_id",
                 "ubicacion_id",
                 "precio",
+                "oferta",  # Indicador de si el precio está en oferta
                 "fecha"  # Mantener fecha para facilitar consultas
             )
         )
