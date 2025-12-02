@@ -441,7 +441,7 @@ docker logs jupyter-spark 2>&1 | grep "token="
 
 ## 👥 Autores
 
-Proyecto desarrollado para el curso **Big Data** – UCU Campus Salto, Diciembre 2024.
+Proyecto desarrollado por **Ana Clara Sena**, **Francisco Lima** y **Mateo Rodriguez** para el curso **Big Data** – UCU Campus Salto, Diciembre 2025.
 
 ---
 
