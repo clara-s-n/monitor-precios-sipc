@@ -66,12 +66,38 @@ data_sipc/
 - **RAM** 4GB mínimo (6GB recomendado)
 - **Disco** 5GB disponible
 
-### Datos
+### Datos de Entrada
 
-Archivos CSV del SIPC (descargar de [Catálogo de Datos Abiertos](https://catalogodatos.gub.uy/)):
-- `precios.csv` (~20M+ registros)
-- `productos.csv` (~379 productos)
-- `establecimientos.csv` (~852 establecimientos)
+El proyecto utiliza datos del **Sistema de Información de Precios al Consumidor (SIPC)** disponibles en el Catálogo de Datos Abiertos de Uruguay.
+
+#### Descargar los archivos
+
+| Archivo | Enlace de descarga | Registros |
+|---------|-------------------|-----------|
+| Precios | [precios_2025.csv](https://catalogodatos.gub.uy/dataset/35d8f45e-2aa7-48b5-98dd-f973b05cf8ba/resource/36c62bab-b7e4-4c9e-ad9b-4c1182090a22/download/precios_2025.csv) | ~20M+ |
+| Productos | [productos.csv](https://catalogodatos.gub.uy/dataset/35d8f45e-2aa7-48b5-98dd-f973b05cf8ba/resource/ed042b97-12ce-46ff-a169-b2594337a6e4/download/productos.csv) | ~379 |
+| Establecimientos | [establecimiento.csv](https://catalogodatos.gub.uy/dataset/35d8f45e-2aa7-48b5-98dd-f973b05cf8ba/resource/5fbdd7e8-97fa-44db-b978-4381670c8933/download/establecimiento.csv) | ~852 |
+
+#### Preparar los archivos
+
+Después de descargar, **renombrar** los archivos y colocarlos en `data_sipc/landing/`:
+
+```bash
+# Renombrar archivos descargados
+mv precios_2025.csv data_sipc/landing/precios.csv
+mv establecimiento.csv data_sipc/landing/establecimientos.csv
+```
+
+Estructura final esperada:
+
+```
+data_sipc/landing/
+├── precios.csv
+├── productos.csv
+└── establecimientos.csv
+```
+
+> ⚠️ **Importante:** Los nombres de archivo deben ser exactamente `precios.csv`, `productos.csv` y `establecimientos.csv` para que el pipeline ETL los procese correctamente.
 
 ---
 
@@ -86,14 +112,7 @@ cd monitor-precios-sipc
 
 ### 2. Preparar datos de entrada
 
-Colocar los archivos CSV del SIPC en la carpeta `data_sipc/landing/`:
-
-```
-data_sipc/landing/
-├── precios.csv
-├── productos.csv
-└── establecimientos.csv
-```
+Descargar y preparar los archivos CSV según las instrucciones de la sección [Datos de Entrada](#datos-de-entrada).
 
 ### 3. Iniciar los servicios
 
